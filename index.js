@@ -751,6 +751,49 @@ app.post('/api/webhook/mercadopago', async (req, res) => {
   }
 });
 
+// Atualizar Status do Chamado (Técnico) com Notificação Automática para o Cliente
+app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (req.usuario.tipo === 'CLIENTE') {
+      return res.status(403).json({ error: 'Apenas técnicos podem atualizar o status.' });
+    }
+
+    // 1. Atualiza o status na base de dados
+    const result = await db.query(
+      'UPDATE chamados SET status = \$1 WHERE id = \$2 RETURNING *',
+      [status, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Chamado não encontrado.' });
+    }
+
+    const chamado = result.rows[0];
+    const clienteId = chamado.usuario_id || chamado.cliente_id || chamado.usuarioid;
+
+    // 2. Busca o telefone do cliente dono do chamado e envia o WhatsApp
+    if (clienteId) {
+      const userRes = await db.query('SELECT telefone, nome FROM usuarios WHERE id = \$1', [clienteId]);
+      const cliente = userRes.rows[0];
+      
+      if (cliente && cliente.telefone) {
+        enviarNotificacaoWhatsApp(
+          cliente.telefone,
+          `📢 *Atualização no seu Chamado!*\n\nOlá, *${cliente.nome}*.\nO seu chamado *"${chamado.titulo}"* (#${chamado.id}) teve o status atualizado para: *${chamado.status}*.`
+        );
+      }
+    }
+
+    res.json({ mensagem: 'Status atualizado com sucesso!', chamado });
+  } catch (error) {
+    console.error('Erro ao atualizar status:', error);
+    res.status(500).json({ error: 'Erro ao atualizar status.' });
+  }
+});
+
 // Atualizar Valor do Chamado (Técnico)
 app.patch('/api/chamados/:id/valor', autenticarToken, async (req, res) => {
   try {
@@ -808,57 +851,6 @@ app.patch('/api/chamados/:id/editar', autenticarToken, async (req, res) => {
   }
 });
 
-// ==========================================
-// ROTA CORRIGIDA E CONCLUÍDA: Atualizar Status do Chamado (Técnico) com Notificação WhatsApp
-// ==========================================
-app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    if (!status) {
-      return res.status(400).json({ error: 'O novo status é obrigatório.' });
-    }
-
-    // Atualiza o status do chamado no banco de dados
-    const result = await db.query(
-      'UPDATE chamados SET status = \$1 WHERE id = \$2 RETURNING *',
-      [status, id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Chamado não encontrado.' });
-    }
-
-    const chamadoAtualizado = result.rows[0];
-    const clienteId = chamadoAtualizado.usuario_id || chamadoAtualizado.cliente_id || chamadoAtualizado.usuarioid;
-
-    // Busca o telefone do cliente para enviar o WhatsApp
-    if (clienteId) {
-      db.query('SELECT telefone FROM usuarios WHERE id = \$1', [clienteId])
-        .then((userRes) => {
-          const telefoneCliente = userRes.rows[0]?.telefone;
-          if (telefoneCliente) {
-            enviarNotificacaoWhatsApp(
-              telefoneCliente,
-              `🔔 *Atualização no seu Chamado*\n\nO chamado *#${chamadoAtualizado.id}* (${chamadoAtualizado.titulo}) teve o status alterado para: *${status}*.`
-            );
-          }
-        })
-        .catch((err) => console.error('Erro ao buscar telefone para notificação de status:', err));
-    }
-
-    res.json({
-      mensagem: 'Status atualizado com sucesso!',
-      chamado: chamadoAtualizado,
-    });
-  } catch (error) {
-    console.error('Erro ao atualizar status do chamado:', error);
-    res.status(500).json({ error: 'Erro ao atualizar status do chamado.' });
-  }
-});
-
-// Inicialização do Servidor HTTP
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
