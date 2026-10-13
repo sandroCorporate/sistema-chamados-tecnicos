@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Chamados Técnicos</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          Helvetica, Arial, sans-serif;
+      }
+
+      body {
+        background-color: #f1f5f9;
+        color: #334155;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        background: #ffffff;
+        width: 100%;
+        max-width: 500px;
+        padding: 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+
+      h2,
+      h3,
+      h4 {
+        color: #1e293b;
+        margin-bottom: 16px;
+      }
+
+      .form-group {
+        margin-bottom: 16px;
+      }
+
+      label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 14px;
+        outline: none;
+      }
+
+      input:focus,
+      textarea:focus,
+      select:focus {
+        border-color: #2563eb;
+      }
+
+      button {
+        width: 100%;
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      button:hover {
+        background-color: #1d4ed8;
+      }
+
+      .btn-danger {
+        background-color: #ef4444;
+      }
+
+      .btn-danger:hover {
+        background-color: #dc2626;
+      }
+
+      .card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .badge-ABERTO {
+        background-color: #fef3c7;
+        color: #d97706;
+      }
+      .badge-EM_ATENDIMENTO {
+        background-color: #dbeafe;
+        color: #2563eb;
+      }
+      .badge-CONCLUIDO {
+        background-color: #dcfce7;
+        color: #16a34a;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .header-user {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 12px;
+      }
+
+      .msg {
+        padding: 10px;
+        border-radius: 6px;
+        font-size: 13px;
+        margin-top: 10px;
+      }
+      .msg-error {
+        background-color: #fee2e2;
+        color: #991b1b;
+      }
+      .msg-success {
+        background-color: #dcfce7;
+        color: #166534;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Tela de Login -->
+      <div id="screen-login">
+        <h2>Acesso ao Sistema</h2>
+        <div id="login-msg"></div>
+        <form id="form-login" style="margin-top: 15px">
+          <div class="form-group">
+            <label>E-mail</label>
+            <input
+              type="email"
+              id="login-email"
+              required
+              placeholder="sandro@tech.com"
+            />
+          </div>
+          <div class="form-group">
+            <label>Senha</label>
+            <input
+              type="password"
+              id="login-senha"
+              required
+              placeholder="••••••••"
+            />
+          </div>
+          <button type="submit">Entrar</button>
+        </form>
+      </div>
+
+      <!-- Painel Principal (Dashboard) -->
+      <div id="screen-dashboard" class="hidden">
+        <div class="header-user">
+          <div>
+            <h3 style="margin: 0">Painel de Chamados</h3>
+            <small id="user-info" style="color: #64748b"></small>
+          </div>
+          <button
+            id="btn-logout"
+            class="btn-danger"
+            style="width: auto; padding: 6px 12px"
+          >
+            Sair
+          </button>
+        </div>
+
+        <!-- Formulário de Abrir Chamado (Apenas CLIENTE) -->
+        <div id="section-novo-chamado" class="card" style="margin-bottom: 20px">
+          <h4 style="margin-bottom: 10px">Abrir Novo Chamado</h4>
+          <div id="chamado-msg"></div>
+          <form id="form-chamado">
+            <div class="form-group">
+              <label>Título</label>
+              <input
+                type="text"
+                id="chamado-titulo"
+                required
+                placeholder="Ex: Substituição de Disco Rígido"
+              />
+            </div>
+            <div class="form-group">
+              <label>Descrição</label>
+              <textarea
+                id="chamado-descricao"
+                rows="3"
+                required
+                placeholder="Descreva os detalhes do problema..."
+              ></textarea>
+            </div>
+            <button type="submit">Enviar Chamado</button>
+          </form>
+        </div>
+
+        <!-- Lista de Chamados -->
+        <h3>Chamados Registados</h3>
+        <div id="lista-chamados">
+          <p style="color: #64748b">Carregando...</p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let token = localStorage.getItem('token');
+      let usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
+
+      const screenLogin = document.getElementById('screen-login');
+      const screenDashboard = document.getElementById('screen-dashboard');
+      const loginMsg = document.getElementById('login-msg');
+      const chamadoMsg = document.getElementById('chamado-msg');
+
+      if (token && usuario) {
+        showDashboard();
+      } else {
+        showLogin();
+      }
+
+      function showLogin() {
+        screenLogin.classList.remove('hidden');
+        screenDashboard.classList.add('hidden');
+      }
+
+      function showDashboard() {
+        screenLogin.classList.add('hidden');
+        screenDashboard.classList.remove('hidden');
+        document.getElementById(
+          'user-info'
+        ).innerText = `${usuario.nome} (${usuario.tipo}) - ${usuario.email}`;
+
+        if (usuario.tipo === 'CLIENTE' || usuario.tipo === 'cliente') {
+          document
+            .getElementById('section-novo-chamado')
+            .classList.remove('hidden');
+        } else {
+          document
+            .getElementById('section-novo-chamado')
+            .classList.add('hidden');
+        }
+
+        carregarChamados();
+      }
+
+      // Evento de Login
+      document
+        .getElementById('form-login')
+        .addEventListener('submit', async (e) => {
+          e.preventDefault();
+          loginMsg.innerHTML = '';
+
+          const email = document.getElementById('login-email').value;
+          const senha = document.getElementById('login-senha').value;
+
+          try {
+            const res = await fetch('/api/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, senha }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+              throw new Error(data.error || 'Erro ao realizar login.');
+            }
+
+            token = data.token;
+            usuario = data.usuario;
+            localStorage.setItem('token', token);
+            localStorage.setItem('usuario', JSON.stringify(usuario));
+
+            showDashboard();
+          } catch (err) {
+            loginMsg.innerHTML = `<div class="msg msg-error">${err.message}</div>`;
+          }
+        });
+
+      // Evento de Criar Chamado
+      document
+        .getElementById('form-chamado')
+        .addEventListener('submit', async (e) => {
+          e.preventDefault();
+          chamadoMsg.innerHTML = '';
+
+          const titulo = document.getElementById('chamado-titulo').value;
+          const descricao = document.getElementById('chamado-descricao').value;
+
+          try {
+            const res = await fetch('/api/chamados', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ titulo, descricao }),
+            });
+
+            const data = await res.json();
+            if (!res.ok)
+              throw new Error(data.error || 'Erro ao criar chamado.');
+
+            document.getElementById('chamado-titulo').value = '';
+            document.getElementById('chamado-descricao').value = '';
+            chamadoMsg.innerHTML = `<div class="msg msg-success">Chamado aberto com sucesso!</div>`;
+
+            carregarChamados();
+          } catch (err) {
+            chamadoMsg.innerHTML = `<div class="msg msg-error">${err.message}</div>`;
+          }
+        });
+
+      // Carregar Lista de Chamados
+      async function carregarChamados() {
+        const listaDiv = document.getElementById('lista-chamados');
+        try {
+          const res = await fetch('/api/chamados', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          const chamados = await res.json();
+          if (!res.ok)
+            throw new Error(chamados.error || 'Erro ao buscar chamados.');
+
+          if (chamados.length === 0) {
+            listaDiv.innerHTML =
+              '<p style="color: #64748b;">Nenhum chamado encontrado.</p>';
+            return;
+          }
+
+          listaDiv.innerHTML = chamados
+            .map(
+              (c) => `
+          <div class="card" id="card-${c.id}">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+              <h4 id="titulo-${c.id}">${c.titulo}</h4>
+              <span class="badge badge-${c.status}">${c.status}</span>
+            </div>
+            <p id="desc-${c.id}" style="margin-top: 8px; color: #475569;">${
+                c.descricao
+              }</p>
+            <small style="color: #94a3b8; display: block; margin-top: 8px;">Criado em: ${new Date(
+              c.criado_em
+            ).toLocaleString('pt-BR')}</small>
+            
+            ${
+              (usuario.tipo === 'CLIENTE' || usuario.tipo === 'cliente') &&
+              c.status === 'ABERTO'
+                ? `
+              <div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 8px;">
+                <button type="button" class="btn-toggle-edicao" data-id="\${c.id}" style="background-color: #f59e0b; width: auto; padding: 5px 12px; font-size: 12px; color: white; border: none; border-radius: 6px; cursor: pointer;">Editar / Complementar</button>
+              </div>
+              <form id="form-edit-${
+                c.id
+              }" class="hidden" style="margin-top: 10px;" onsubmit="window.salvarEdicao(event, '${
+                    c.id
+                  }')">
+                <input type="text" id="input-edit-titulo-${
+                  c.id
+                }" value="${c.titulo.replace(
+                    /"/g,
+                    '&quot;'
+                  )}" style="margin-bottom: 5px;" required>
+                <textarea id="input-edit-desc-${
+                  c.id
+                }" rows="2" style="margin-bottom: 5px;" required>${
+                    c.descricao
+                  }</textarea>
+                <div style="display: flex; gap: 5px;">
+                  <button type="submit" style="background-color: #10b981; width: auto; padding: 5px 12px; font-size: 12px;">Guardar Alterações</button>
+                  <button type="button" class="btn-toggle-edicao" data-id="\${c.id}" style="background-color: #64748b; width: auto; padding: 5px 12px; font-size: 12px;">Cancelar</button>
+                </div>
+              </form>
+            `
+                : ''
+            }
+
+            ${
+              usuario.tipo !== 'CLIENTE' && usuario.tipo !== 'cliente'
+                ? `
+              <div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 8px;">
+                <label style="font-size: 12px;">Alterar Status:</label>
+                <select class="select-status" data-id="${c.id}" style="margin-top: 4px;" onchange="window.atualizarStatus('${c.id}', this.value)">
+                  <option value="ABERTO" \${c.status === 'ABERTO' ? 'selected' : ''}>ABERTO</option>
+                  <option value="EM_ATENDIMENTO" \${c.status === 'EM_ATENDIMENTO' ? 'selected' : ''}>EM_ATENDIMENTO</option>
+                  <option value="CONCLUIDO" \${c.status === 'CONCLUIDO' ? 'selected' : ''}>CONCLUIDO</option>
+                </select>
+              </div>
+            `
+                : ''
+            }
+          </div>
+        `
+            )
+            .join('');
+        } catch (err) {
+          listaDiv.innerHTML = `<div class="msg msg-error">${err.message}</div>`;
+        }
+      }
+
+      // Delegação de eventos global e segura atrelada ao body
+      document.body.addEventListener('click', function (e) {
+        const targetBtn = e.target.closest('.btn-toggle-edicao');
+        if (targetBtn) {
+          e.preventDefault(); // Impede o erro de Service Worker / navegação do WebContainer
+          const id = targetBtn.getAttribute('data-id');
+          console.log('Botão de edição clicado para o ID:', id);
+          const form = document.getElementById(`form-edit-${id}`);
+          if (form) {
+            form.classList.toggle('hidden');
+          }
+        }
+      });
+
+      window.salvarEdicao = async function (event, id) {
+        event.preventDefault();
+
+        const inputTitulo = document.getElementById(`input-edit-titulo-${id}`);
+        const inputDesc = document.getElementById(`input-edit-desc-${id}`);
+
+        const novoTitulo = inputTitulo.value;
+        const novaDescricao = inputDesc.value;
+
+        try {
+          const res = await fetch(`/api/chamados/${id}/editar`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              titulo: novoTitulo,
+              descricao: novaDescricao,
+            }),
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || 'Erro ao guardar alterações.');
+          }
+
+          alert('Chamado atualizado com sucesso!');
+          carregarChamados();
+        } catch (err) {
+          alert(`Erro ao salvar: ${err.message}`);
+        }
+      };
+
+      window.atualizarStatus = async function (id, novoStatus) {
+        try {
+          const res = await fetch(`/api/chamados/${id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ status: novoStatus }),
+          });
+
+          const data = await res.json();
+          if (!res.ok)
+            throw new Error(data.error || 'Erro ao atualizar status.');
+
+          carregarChamados();
+        } catch (err) {
+          alert(err.message);
+        }
+      };
+
+      // Evento de Logout
+      document.getElementById('btn-logout').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('usuario');
+        token = null;
+        usuario = null;
+        showLogin();
+      });
+    </script>
+  </body>
+</html>
