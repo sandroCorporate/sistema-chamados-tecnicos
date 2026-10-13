@@ -469,12 +469,12 @@ app.post('/api/registro', async (req, res) => {
     let result;
     try {
       result = await db.query(
-        'INSERT INTO usuarios (nome, email, senha_hash, tipo, telefone) VALUES ($1, $2, $3, $4, $5) RETURNING id, nome, email, telefone',
+        'INSERT INTO usuarios (nome, email, senha_hash, tipo, telefone) VALUES (\$1, \$2, \$3, \$4, \$5) RETURNING id, nome, email, telefone',
         [nome, email, senhaHash, tipoUsuario, telefone || null]
       );
     } catch (err1) {
       result = await db.query(
-        'INSERT INTO usuarios (nome, email, senha_hash, perfil, telefone) VALUES ($1, $2, $3, $4, $5) RETURNING id, nome, email, telefone',
+        'INSERT INTO usuarios (nome, email, senha_hash, perfil, telefone) VALUES (\$1, \$2, \$3, \$4, \$5) RETURNING id, nome, email, telefone',
         [nome, email, senhaHash, tipoUsuario, telefone || null]
       );
     }
@@ -496,7 +496,7 @@ app.post('/api/registro', async (req, res) => {
 app.post('/api/login', async (req, res) => {
   try {
     const { email, senha } = req.body;
-    const { rows } = await db.query('SELECT * FROM usuarios WHERE email = $1', [
+    const { rows } = await db.query('SELECT * FROM usuarios WHERE email = \$1', [
       email,
     ]);
     if (rows.length === 0) {
@@ -547,20 +547,20 @@ app.get('/api/chamados', autenticarToken, async (req, res) => {
     let rows;
     try {
       const resQuery = await db.query(
-        'SELECT * FROM chamados WHERE usuario_id = $1 ORDER BY criado_em DESC',
+        'SELECT * FROM chamados WHERE usuario_id = \$1 ORDER BY criado_em DESC',
         [req.usuario.id]
       );
       rows = resQuery.rows;
     } catch (err1) {
       try {
         const resQuery = await db.query(
-          'SELECT * FROM chamados WHERE cliente_id = $1 ORDER BY criado_em DESC',
+          'SELECT * FROM chamados WHERE cliente_id = \$1 ORDER BY criado_em DESC',
           [req.usuario.id]
         );
         rows = resQuery.rows;
       } catch (err2) {
         const resQuery = await db.query(
-          'SELECT * FROM chamados WHERE usuarioid = $1 ORDER BY criado_em DESC',
+          'SELECT * FROM chamados WHERE usuarioid = \$1 ORDER BY criado_em DESC',
           [req.usuario.id]
         );
         rows = resQuery.rows;
@@ -587,18 +587,18 @@ app.post('/api/chamados', autenticarToken, async (req, res) => {
     let result;
     try {
       result = await db.query(
-        'INSERT INTO chamados (titulo, descricao, usuario_id, status) VALUES ($1, $2, $3, $4) RETURNING *',
+        'INSERT INTO chamados (titulo, descricao, usuario_id, status) VALUES (\$1, \$2, \$3, \$4) RETURNING *',
         [titulo, descricao, req.usuario.id, 'ABERTO']
       );
     } catch (err1) {
       result = await db.query(
-        'INSERT INTO chamados (titulo, descricao, cliente_id, status) VALUES ($1, $2, $3, $4) RETURNING *',
+        'INSERT INTO chamados (titulo, descricao, cliente_id, status) VALUES (\$1, \$2, \$3, \$4) RETURNING *',
         [titulo, descricao, req.usuario.id, 'ABERTO']
       );
     }
 
     const userRes = await db.query(
-      'SELECT telefone FROM usuarios WHERE id = $1',
+      'SELECT telefone FROM usuarios WHERE id = \$1',
       [req.usuario.id]
     );
     const userPhone = userRes.rows[0]?.telefone;
@@ -631,7 +631,7 @@ app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
         .json({ error: 'Valor inválido para o pagamento.' });
     }
 
-    const chamadoRes = await db.query('SELECT * FROM chamados WHERE id = $1', [
+    const chamadoRes = await db.query('SELECT * FROM chamados WHERE id = \$1', [
       id,
     ]);
     if (chamadoRes.rows.length === 0) {
@@ -672,12 +672,12 @@ app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
     }
 
     await db.query(
-      'UPDATE chamados SET status = $1, valor = $2, pagamento_id = $3 WHERE id = $4',
+      'UPDATE chamados SET status = \$1, valor = \$2, pagamento_id = \$3 WHERE id = \$4',
       ['AGUARDANDO PAGAMENTO', valor, String(pagamentoId), id]
     );
 
     // Dispara a notificação sem bloquear a resposta HTTP
-    db.query('SELECT telefone FROM usuarios WHERE id = $1', [req.usuario.id])
+    db.query('SELECT telefone FROM usuarios WHERE id = \$1', [req.usuario.id])
       .then((userRes) => {
         const userPhone = userRes.rows[0]?.telefone;
         if (userPhone) {
@@ -719,7 +719,7 @@ app.post('/api/webhook/mercadopago', async (req, res) => {
 
       if (paymentInfo.status === 'approved') {
         const updateRes = await db.query(
-          "UPDATE chamados SET status = 'EM ATENDIMENTO' WHERE pagamento_id = $1 RETURNING *",
+          "UPDATE chamados SET status = 'EM ATENDIMENTO' WHERE pagamento_id = \$1 RETURNING *",
           [String(paymentId)]
         );
 
@@ -728,7 +728,7 @@ app.post('/api/webhook/mercadopago', async (req, res) => {
           const userId = ch.usuario_id || ch.cliente_id || ch.usuarioid;
           if (userId) {
             const userRes = await db.query(
-              'SELECT telefone FROM usuarios WHERE id = $1',
+              'SELECT telefone FROM usuarios WHERE id = \$1',
               [userId]
             );
             const tel = userRes.rows[0]?.telefone;
@@ -764,7 +764,7 @@ app.patch('/api/chamados/:id/valor', autenticarToken, async (req, res) => {
     }
 
     const result = await db.query(
-      'UPDATE chamados SET valor = $1 WHERE id = $2 RETURNING *',
+      'UPDATE chamados SET valor = \$1 WHERE id = \$2 RETURNING *',
       [valor, id]
     );
 
@@ -780,7 +780,7 @@ app.patch('/api/chamados/:id/editar', autenticarToken, async (req, res) => {
     const { id } = req.params;
     const { titulo, descricao } = req.body;
 
-    const { rows } = await db.query('SELECT * FROM chamados WHERE id = $1', [
+    const { rows } = await db.query('SELECT * FROM chamados WHERE id = \$1', [
       id,
     ]);
     if (rows.length === 0) {
@@ -795,7 +795,7 @@ app.patch('/api/chamados/:id/editar', autenticarToken, async (req, res) => {
     }
 
     const result = await db.query(
-      'UPDATE chamados SET titulo = $1, descricao = $2 WHERE id = $3 RETURNING *',
+      'UPDATE chamados SET titulo = \$1, descricao = \$2 WHERE id = \$3 RETURNING *',
       [titulo, descricao, id]
     );
 
@@ -808,51 +808,57 @@ app.patch('/api/chamados/:id/editar', autenticarToken, async (req, res) => {
   }
 });
 
-// Atualizar Status do Chamado (Técnico)
+// ==========================================
+// ROTA CORRIGIDA E CONCLUÍDA: Atualizar Status do Chamado (Técnico) com Notificação WhatsApp
+// ==========================================
 app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
   try {
     const { id } = req.params;
-    let { status } = req.body;
+    const { status } = req.body;
 
-    if (req.usuario.tipo === 'CLIENTE') {
-      return res
-        .status(403)
-        .json({ error: 'Apenas técnicos podem alterar o status.' });
+    if (!status) {
+      return res.status(400).json({ error: 'O novo status é obrigatório.' });
     }
 
+    // Atualiza o status do chamado no banco de dados
     const result = await db.query(
-      'UPDATE chamados SET status = $1 WHERE id = $2 RETURNING *',
+      'UPDATE chamados SET status = \$1 WHERE id = \$2 RETURNING *',
       [status, id]
     );
 
-    const ch = result.rows[0];
-    const userId = ch.usuario_id || ch.cliente_id || ch.usuarioid;
-    if (userId) {
-      db.query('SELECT telefone FROM usuarios WHERE id = $1', [userId])
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Chamado não encontrado.' });
+    }
+
+    const chamadoAtualizado = result.rows[0];
+    const clienteId = chamadoAtualizado.usuario_id || chamadoAtualizado.cliente_id || chamadoAtualizado.usuarioid;
+
+    // Busca o telefone do cliente para enviar o WhatsApp
+    if (clienteId) {
+      db.query('SELECT telefone FROM usuarios WHERE id = \$1', [clienteId])
         .then((userRes) => {
-          const tel = userRes.rows[0]?.telefone;
-          if (tel) {
+          const telefoneCliente = userRes.rows[0]?.telefone;
+          if (telefoneCliente) {
             enviarNotificacaoWhatsApp(
-              tel,
-              `Atualização do Chamado #${ch.id} ("${ch.titulo}"): O status foi alterado para [${status}].`
+              telefoneCliente,
+              `🔔 *Atualização no seu Chamado*\n\nO chamado *#${chamadoAtualizado.id}* (${chamadoAtualizado.titulo}) teve o status alterado para: *${status}*.`
             );
           }
         })
-        .catch((e) => console.error('Erro na busca de telefone:', e));
+        .catch((err) => console.error('Erro ao buscar telefone para notificação de status:', err));
     }
 
     res.json({
       mensagem: 'Status atualizado com sucesso!',
-      chamado: result.rows[0],
+      chamado: chamadoAtualizado,
     });
   } catch (error) {
-    console.error('Erro ao atualizar status:', error);
-    res
-      .status(500)
-      .json({ error: 'Erro ao atualizar status: ' + error.message });
+    console.error('Erro ao atualizar status do chamado:', error);
+    res.status(500).json({ error: 'Erro ao atualizar status do chamado.' });
   }
 });
 
+// Inicialização do Servidor HTTP
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
