@@ -92,7 +92,7 @@ app.get('/', (req, res) => {
 });
 
 // ==========================================
-// ROTA: Cadastro Público de Clientes (LL TECH INFO)
+// ROTA: Cadastro Público de Clientes (Corrigida)
 // ==========================================
 app.post('/api/registro', async (req, res) => {
   const { nome, email, telefone, documento, senha } = req.body;
@@ -111,25 +111,15 @@ app.post('/api/registro', async (req, res) => {
   try {
     const hashSenha = await bcrypt.hash(senha, 10);
 
-    // Tenta inserir utilizando a coluna 'senha'; se falhar, tenta 'senha_hash'
-    let query;
-    try {
-      query = `
-        INSERT INTO usuarios (nome, email, telefone, documento, senha, tipo)
-        VALUES ($1, $2, $3, $4, $5, 'CLIENTE')
-        RETURNING id, nome, email, telefone, tipo;
-      `;
-      const result = await db.query(query, [nome, email, telLimpo, documento, hashSenha]);
-      return res.status(201).json({ message: 'Cliente cadastrado com sucesso!', usuario: result.rows[0] });
-    } catch (errCol) {
-      query = `
-        INSERT INTO usuarios (nome, email, telefone, documento, senha_hash, tipo)
-        VALUES ($1, $2, $3, $4, $5, 'CLIENTE')
-        RETURNING id, nome, email, telefone, tipo;
-      `;
-      const result = await db.query(query, [nome, email, telLimpo, documento, hashSenha]);
-      return res.status(201).json({ message: 'Cliente cadastrado com sucesso!', usuario: result.rows[0] });
-    }
+    // Insere preenchendo tanto 'senha' quanto 'senha_hash' para satisfazer qualquer restrição da base de dados
+    const query = `
+      INSERT INTO usuarios (nome, email, telefone, documento, senha, senha_hash, tipo)
+      VALUES ($1, $2, $3, $4, $5, $5, 'CLIENTE')
+      RETURNING id, nome, email, telefone, tipo;
+    `;
+    
+    const result = await db.query(query, [nome, email, telLimpo, documento, hashSenha]);
+    return res.status(201).json({ message: 'Cliente cadastrado com sucesso!', usuario: result.rows[0] });
 
   } catch (error) {
     if (error.code === '23505') {
