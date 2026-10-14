@@ -22,21 +22,15 @@ const mpClient = new MercadoPagoConfig({
 app.use(express.json());
 
 // ==========================================
-// FUNÇÃO AUXILIAR: Envio de WhatsApp (Corrigida p/ Z-API /send-text)
+// FUNÇÃO AUXILIAR: Envio de WhatsApp (Z-API)
 // ==========================================
 async function enviarNotificacaoWhatsApp(telefone, mensagem) {
-  let waUrl = process.env.WA_API_URL;
+  const waUrl = process.env.WA_API_URL;
   const waKey = process.env.WA_API_KEY;
 
   if (!waUrl || !telefone || waUrl.trim() === '') {
     console.log('[WhatsApp Skipped] URL da API ou telefone não configurado.');
     return;
-  }
-
-  // Garante que a URL aponta para o endpoint correto de envio de texto (/send-text)
-  waUrl = waUrl.trim();
-  if (!waUrl.endsWith('/send-text')) {
-    waUrl = waUrl.endsWith('/') ? waUrl + 'send-text' : waUrl + '/send-text';
   }
 
   let numApenasDigitos = telefone.replace(/\D/g, '');
@@ -45,11 +39,11 @@ async function enviarNotificacaoWhatsApp(telefone, mensagem) {
   }
 
   try {
-    const response = await fetch(waUrl, {
+    const response = await fetch(waUrl.trim(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(waKey && { 'Client-Token': waKey, apikey: waKey }),
+        'Client-Token': waKey || 'B2F6CE0E3D44D70B12975971',
       },
       body: JSON.stringify({
         phone: numApenasDigitos,
