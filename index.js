@@ -21,7 +21,9 @@ const mpClient = new MercadoPagoConfig({
 
 app.use(express.json());
 
-// Função Auxiliar para Envio de Notificações via WhatsApp (Tratada para nunca travar o app)
+// ==========================================
+// FUNÇÃO AUXILIAR: Envio de WhatsApp
+// ==========================================
 async function enviarNotificacaoWhatsApp(telefone, mensagem) {
   const waUrl = process.env.WA_API_URL;
   const waKey = process.env.WA_API_KEY;
@@ -59,7 +61,9 @@ async function enviarNotificacaoWhatsApp(telefone, mensagem) {
   }
 }
 
-// Middleware de Autenticação
+// ==========================================
+// MIDDLEWARE: Autenticação JWT
+// ==========================================
 function autenticarToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -79,7 +83,9 @@ function autenticarToken(req, res, next) {
   }
 }
 
-// Rota Principal Frontend
+// ==========================================
+// ROTA: Frontend Principal (SPA)
+// ==========================================
 app.get('/', (req, res) => {
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
@@ -453,7 +459,9 @@ app.get('/', (req, res) => {
 </html>`);
 });
 
-// Registrar Usuário com suporte a Telefone
+// ==========================================
+// ROTA: Registrar Usuário
+// ==========================================
 app.post('/api/registro', async (req, res) => {
   try {
     const { nome, email, senha, tipo, telefone } = req.body;
@@ -492,7 +500,9 @@ app.post('/api/registro', async (req, res) => {
   }
 });
 
-// Login
+// ==========================================
+// ROTA: Login
+// ==========================================
 app.post('/api/login', async (req, res) => {
   try {
     const { email, senha } = req.body;
@@ -534,7 +544,9 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Listar Chamados
+// ==========================================
+// ROTA: Listar Chamados
+// ==========================================
 app.get('/api/chamados', autenticarToken, async (req, res) => {
   try {
     if (req.usuario.tipo !== 'CLIENTE') {
@@ -574,7 +586,9 @@ app.get('/api/chamados', autenticarToken, async (req, res) => {
   }
 });
 
-// Criar Chamado com Notificação no WhatsApp
+// ==========================================
+// ROTA: Criar Chamado
+// ==========================================
 app.post('/api/chamados', autenticarToken, async (req, res) => {
   try {
     const { titulo, descricao } = req.body;
@@ -619,7 +633,9 @@ app.post('/api/chamados', autenticarToken, async (req, res) => {
   }
 });
 
-// Gerar Cobrança Pix via Mercado Pago (Com Fallback de Simulação para ambientes restritos)
+// ==========================================
+// ROTA: Gerar Pagamento Pix
+// ==========================================
 app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -707,7 +723,9 @@ app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
   }
 });
 
-// Webhook do Mercado Pago para Confirmação Automática + Notificação WhatsApp
+// ==========================================
+// ROTA: Webhook Mercado Pago
+// ==========================================
 app.post('/api/webhook/mercadopago', async (req, res) => {
   try {
     const { action, data } = req.body;
@@ -751,7 +769,9 @@ app.post('/api/webhook/mercadopago', async (req, res) => {
   }
 });
 
-// Atualizar Status do Chamado (Técnico) com Notificação Automática para o Cliente
+// ==========================================
+// ROTA: Atualizar Status do Chamado (Técnico) -> Envia WhatsApp para o Cliente do Chamado
+// ==========================================
 app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -774,7 +794,7 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
     const chamado = result.rows[0];
     const clienteId = chamado.usuario_id || chamado.cliente_id || chamado.usuarioid;
 
-    // 2. Busca o telefone do cliente dono do chamado e envia o WhatsApp
+    // 2. Busca o telefone e nome do CLIENTE dono do chamado (e não do técnico logado)
     if (clienteId) {
       const userRes = await db.query('SELECT telefone, nome FROM usuarios WHERE id = \$1', [clienteId]);
       const cliente = userRes.rows[0];
@@ -794,7 +814,9 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
   }
 });
 
-// Atualizar Valor do Chamado (Técnico)
+// ==========================================
+// ROTA: Atualizar Valor do Chamado (Técnico)
+// ==========================================
 app.patch('/api/chamados/:id/valor', autenticarToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -817,7 +839,9 @@ app.patch('/api/chamados/:id/valor', autenticarToken, async (req, res) => {
   }
 });
 
-// Editar Chamado
+// ==========================================
+// ROTA: Editar Chamado
+// ==========================================
 app.patch('/api/chamados/:id/editar', autenticarToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -851,6 +875,9 @@ app.patch('/api/chamados/:id/editar', autenticarToken, async (req, res) => {
   }
 });
 
+// ==========================================
+// INICIALIZAÇÃO DO SERVIDOR
+// ==========================================
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
