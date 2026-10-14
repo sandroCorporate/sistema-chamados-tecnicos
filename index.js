@@ -22,12 +22,13 @@ const mpClient = new MercadoPagoConfig({
 app.use(express.json());
 
 // ==========================================
-// FUNÇÃO AUXILIAR: Envio de WhatsApp (Z-API Oficial Direta)
+// FUNÇÃO AUXILIAR: Envio de WhatsApp (Z-API Definitiva)
 // ==========================================
 async function enviarNotificacaoWhatsApp(telefone, mensagem) {
-  // URL copiada exatamente do painel da Z-API
+  // URL com o ID da instância e o Token da instância (visível no seu painel Z-API)
   const waUrl = 'https://api.z-api.io/instances/3FA96A6E1C7E826EA6682AB027F8477F/token/B2F6CE0E3D44D70B123969D9/send-text';
-  const waKey = 'B2F6CE0E3D44D70B123969D9';
+  // Client-Token global/mestre da conta Z-API para validação no cabeçalho
+  const clientTokenMestre = 'B2F6CE0E3D44D70B12975971';
 
   if (!telefone || telefone.trim() === '') {
     console.log('[WhatsApp Skipped] Telefone não configurado.');
@@ -44,7 +45,8 @@ async function enviarNotificacaoWhatsApp(telefone, mensagem) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'client-token': waKey,
+        'client-token': clientTokenMestre,
+        'Client-Token': clientTokenMestre,
       },
       body: JSON.stringify({
         phone: numApenasDigitos,
