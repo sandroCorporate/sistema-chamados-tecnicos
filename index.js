@@ -22,12 +22,11 @@ const mpClient = new MercadoPagoConfig({
 app.use(express.json());
 
 // ==========================================
-// FUNÇÃO AUXILIAR: Envio de WhatsApp (Z-API Definitiva)
+// FUNÇÃO AUXILIAR: Envio de WhatsApp (Z-API Ajustada)
 // ==========================================
 async function enviarNotificacaoWhatsApp(telefone, mensagem) {
-  // URL estruturada com o Token de Instância E o Client-Token embutidos no padrão Z-API
-  const waUrl = 'https://api.z-api.io/instances/3FA96A6E1C7E826EA6682AB027F8477F/token/B2F6CE0E3D44D70B12975971/send-text';
-  const waKey = 'B2F6CE0E3D44D70B12975971';
+  const waUrl = process.env.WA_API_URL || 'https://api.z-api.io/instances/3FA96A6E1C7E826EA6682AB027F8477F/token/B2F6CE0E3D44D70B12975971/send-text';
+  const waKey = process.env.WA_API_KEY || 'B2F6CE0E3D44D70B12975971';
 
   if (!telefone || telefone.trim() === '') {
     console.log('[WhatsApp Skipped] Telefone não configurado.');
@@ -40,12 +39,13 @@ async function enviarNotificacaoWhatsApp(telefone, mensagem) {
   }
 
   try {
-    const response = await fetch(waUrl, {
+    const response = await fetch(waUrl.trim(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'client-token': waKey,
         'Client-Token': waKey,
+        'Authorization': `Bearer ${waKey}`
       },
       body: JSON.stringify({
         phone: numApenasDigitos,
@@ -62,6 +62,7 @@ async function enviarNotificacaoWhatsApp(telefone, mensagem) {
     );
   }
 }
+
 // ==========================================
 // MIDDLEWARE: Autenticação JWT
 // ==========================================
