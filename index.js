@@ -22,15 +22,21 @@ const mpClient = new MercadoPagoConfig({
 app.use(express.json());
 
 // ==========================================
-// FUNÇÃO AUXILIAR: Envio de WhatsApp
+// FUNÇÃO AUXILIAR: Envio de WhatsApp (Corrigida p/ Z-API /send-text)
 // ==========================================
 async function enviarNotificacaoWhatsApp(telefone, mensagem) {
-  const waUrl = process.env.WA_API_URL;
+  let waUrl = process.env.WA_API_URL;
   const waKey = process.env.WA_API_KEY;
 
   if (!waUrl || !telefone || waUrl.trim() === '') {
     console.log('[WhatsApp Skipped] URL da API ou telefone não configurado.');
     return;
+  }
+
+  // Garante que a URL aponta para o endpoint correto de envio de texto (/send-text)
+  waUrl = waUrl.trim();
+  if (!waUrl.endsWith('/send-text')) {
+    waUrl = waUrl.endsWith('/') ? waUrl + 'send-text' : waUrl + '/send-text';
   }
 
   let numApenasDigitos = telefone.replace(/\D/g, '');
@@ -39,7 +45,7 @@ async function enviarNotificacaoWhatsApp(telefone, mensagem) {
   }
 
   try {
-    await fetch(waUrl, {
+    const response = await fetch(waUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -47,12 +53,12 @@ async function enviarNotificacaoWhatsApp(telefone, mensagem) {
       },
       body: JSON.stringify({
         phone: numApenasDigitos,
-        number: numApenasDigitos,
         message: mensagem,
-        text: mensagem,
       }),
     });
-    console.log(`[WhatsApp Sent] Notificação enviada para ${numApenasDigitos}`);
+
+    const data = await response.json();
+    console.log(`[WhatsApp Sent] Resposta Z-API para ${numApenasDigitos}:`, data);
   } catch (error) {
     console.error(
       '[WhatsApp Error] Falha ao enviar notificação (ignorado):',
@@ -794,7 +800,7 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
     const chamado = result.rows[0];
     const clienteId = chamado.usuario_id || chamado.cliente_id || chamado.usuarioid;
 
-    // 2. Busca o telefone e nome do CLIENTE dono do chamado (e não do técnico logado)
+    // 2. Busca o telefone e nome do CLIENTE dono do chamado
     if (clienteId) {
       const userRes = await db.query('SELECT telefone, nome FROM usuarios WHERE id = \$1', [clienteId]);
       const cliente = userRes.rows[0];
