@@ -92,7 +92,7 @@ app.get('/', (req, res) => {
 });
 
 // ==========================================
-// ROTA: Cadastro Público de Clientes (LL TECH INFO - Blindado)
+// ROTA: Cadastro Público de Clientes (LL TECH INFO)
 // ==========================================
 app.post('/api/registro', async (req, res) => {
   const { nome, email, telefone, documento, senha } = req.body;
@@ -111,18 +111,26 @@ app.post('/api/registro', async (req, res) => {
   try {
     const hashSenha = await bcrypt.hash(senha, 10);
 
-    // SEGURANÇA: Tipo travado rigidamente como CLIENTE
-    const query = `
-      INSERT INTO usuarios (nome, email, telefone, documento, senha, tipo)
-      VALUES ($1, $2, $3, $4, $5, 'CLIENTE')
-      RETURNING id, nome, email, telefone, tipo;
-    `;
-    const result = await db.query(query, [nome, email, telLimpo, documento, hashSenha]);
+    // Tenta inserir utilizando a coluna 'senha'; se falhar, tenta 'senha_hash'
+    let query;
+    try {
+      query = `
+        INSERT INTO usuarios (nome, email, telefone, documento, senha, tipo)
+        VALUES ($1, $2, $3, $4, $5, 'CLIENTE')
+        RETURNING id, nome, email, telefone, tipo;
+      `;
+      const result = await db.query(query, [nome, email, telLimpo, documento, hashSenha]);
+      return res.status(201).json({ message: 'Cliente cadastrado com sucesso!', usuario: result.rows[0] });
+    } catch (errCol) {
+      query = `
+        INSERT INTO usuarios (nome, email, telefone, documento, senha_hash, tipo)
+        VALUES ($1, $2, $3, $4, $5, 'CLIENTE')
+        RETURNING id, nome, email, telefone, tipo;
+      `;
+      const result = await db.query(query, [nome, email, telLimpo, documento, hashSenha]);
+      return res.status(201).json({ message: 'Cliente cadastrado com sucesso!', usuario: result.rows[0] });
+    }
 
-    res.status(201).json({ 
-      message: 'Cliente cadastrado com sucesso!', 
-      usuario: result.rows[0] 
-    });
   } catch (error) {
     if (error.code === '23505') {
       return res.status(400).json({ error: 'E-mail ou CPF/CNPJ já cadastrado no sistema.' });
