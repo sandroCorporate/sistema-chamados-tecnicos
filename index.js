@@ -463,43 +463,44 @@ app.get('/', (req, res) => {
 });
 
 // ==========================================
-// ROTA: Registrar Usuário
+// ROTA: Cadastro Público de Clientes (LL TECH INFO)
 // ==========================================
 app.post('/api/registro', async (req, res) => {
+  const { nome, email, telefone, documento, senha } = req.body;
+
+  // Validação dos campos obrigatórios
+  if (!nome || !email || !telefone || !documento || !senha) {
+    return res.status(400).json({ 
+      error: 'Por favor, preencha todos os campos obrigatórios: Nome Completo, E-mail, WhatsApp, CPF/CNPJ e Senha.' 
+    });
+  }
+
+  // Higienização do WhatsApp (manter apenas dígitos)
+  let telLimpo = telefone.replace(/\D/g, '');
+  if (telLimpo.length < 10) {
+    return res.status(400).json({ error: 'Informe um número de WhatsApp válido com DDD.' });
+  }
+
   try {
-    const { nome, email, senha, tipo, telefone } = req.body;
-    if (!nome || !email || !senha) {
-      return res
-        .status(400)
-        .json({ error: 'Nome, email e senha são obrigatórios.' });
-    }
-    const salt = await bcrypt.genSalt(10);
-    const senhaHash = await bcrypt.hash(senha, salt);
-    const tipoUsuario = tipo || 'CLIENTE';
+    const hashSenha = await bcrypt.hash(senha, 10);
 
-    let result;
-    try {
-      result = await db.query(
-        'INSERT INTO usuarios (nome, email, senha_hash, tipo, telefone) VALUES (\$1, \$2, \$3, \$4, \$5) RETURNING id, nome, email, telefone',
-        [nome, email, senhaHash, tipoUsuario, telefone || null]
-      );
-    } catch (err1) {
-      result = await db.query(
-        'INSERT INTO usuarios (nome, email, senha_hash, perfil, telefone) VALUES (\$1, \$2, \$3, \$4, \$5) RETURNING id, nome, email, telefone',
-        [nome, email, senhaHash, tipoUsuario, telefone || null]
-      );
-    }
+    // SEGURANÇA: O perfil é forçado como 'CLIENTE'
+    const query = `
+      INSERT INTO usuarios (nome, email, telefone, documento, senha, tipo)
+      VALUES ($1, $2, $3, $4, $5, 'CLIENTE')
+      RETURNING id, nome, email, telefone, tipo;
+    `;
+    const result = await pool.query(query, [nome, email, telLimpo, documento, hashSenha]);
 
-    res.status(201).json({
-      mensagem: 'Usuário cadastrado com sucesso!',
-      usuario: result.rows[0],
+    res.status(201).json({ 
+      message: 'Cadastro de cliente realizado com sucesso!', 
+      usuario: result.rows[0] 
     });
   } catch (error) {
-    console.error('Erro no registro:', error);
     if (error.code === '23505') {
-      return res.status(400).json({ error: 'E-mail já cadastrado.' });
+      return res.status(400).json({ error: 'E-mail ou CPF/CNPJ já cadastrado no sistema.' });
     }
-    res.status(500).json({ error: 'Erro ao registrar usuário.' });
+    res.status(500).json({ error: 'Erro interno ao registrar cliente: ' + error.message });
   }
 });
 
