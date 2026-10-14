@@ -385,21 +385,40 @@ A nossa equipa técnica já está a atuar no seu caso.`;
 });
 
 // ==========================================
-// ROTA: Atualizar Status do Chamado (Técnico)
+// ROTA: Atualizar Chamado (Status e Valor - Técnico)
 // ==========================================
 app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, valor } = req.body;
 
-    if (req.usuario.tipo === 'CLIENTE') {
-      return res.status(403).json({ error: 'Apenas técnicos podem atualizar o status.' });
+    if (!req.usuario || req.usuario.tipo.toUpperCase() !== 'TECNICO') {
+      return res.status(403).json({ error: 'Acesso negado. Apenas técnicos podem atualizar chamados.' });
     }
 
-    const result = await db.query(
-      'UPDATE chamados SET status = \$1 WHERE id = \$2 RETURNING *',
-      [status, id]
-    );
+    // Garante que a coluna valor existe na tabela
+    try {
+      await db.query('ALTER TABLE chamados ADD COLUMN IF NOT EXISTS valor NUMERIC(10,2) DEFAULT 0.00;');
+    } catch (e) {
+      // Ignora se já existir
+    }
+
+    // Atualiza status e/ou valor conforme enviado no pedido
+    let query, params;
+    if (valor !== undefined && status !== undefined) {
+      query = 'UPDATE chamados SET status = \$1, valor = \$2 WHERE id = \$3 RETURNING *';
+      params = [status, valor, id];
+    } else if (status !== undefined) {
+      query = 'UPDATE chamados SET status = \$1 WHERE id = \$2 RETURNING *';
+      params = [status, id];
+    } else if (valor !== undefined) {
+      query = 'UPDATE chamados SET valor = \$1 WHERE id = \$2 RETURNING *';
+      params = [valor, id];
+    } else {
+      return res.status(400).json({ error: 'Nenhum dado fornecido para atualização.' });
+    }
+
+    const result = await db.query(query, params);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Chamado não encontrado.' });
@@ -408,31 +427,37 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
     const chamado = result.rows[0];
     const clienteId = chamado.usuario_id || chamado.cliente_id || chamado.usuarioid;
 
+    // Dispara notificação via WhatsApp para o cliente
     if (clienteId) {
-      const userRes = await db.query('SELECT telefone, nome FROM usuarios WHERE id = \$1', [clienteId]);
-      const cliente = userRes.rows[0];
-      
-      if (cliente && cliente.telefone) {
-        const msgAtualizacao = `🖥️ *LL TECH INFO - ATUALIZAÇÃO DE CHAMADO*
+      try {
+        const userRes = await db.query('SELECT telefone, nome FROM usuarios WHERE id = \$1', [clienteId]);
+        const cliente = userRes.rows[0];
+        
+        if (cliente && cliente.telefone) {
+          const idCurto = String(chamado.id).substring(0, 8);
+          const msgAtualizacao = `🖥️ *LL TECH INFO - ATUALIZAÇÃO DE CHAMADO*
 ----------------------------------------
 Olá, *${cliente.nome}*!
 
-O status do seu chamado *#${chamado.id.substring(0, 8)}* foi atualizado.
+O seu chamado *#${idCurto}* foi atualizado pela nossa equipa técnica.
 
 📌 *Assunto:* ${chamado.titulo}
-🔄 *Novo Status:* ${chamado.status.toUpperCase()}
+🔄 *Novo Status:* ${String(chamado.status).toUpperCase()}
 ${chamado.valor ? `💰 *Valor do Serviço:* R\$ \${parseFloat(chamado.valor).toFixed(2)}` : ''}
 
-Aceda ao portal para consultar os detalhes.`;
+Aceda ao portal para efetuar o pagamento via Pix e prosseguir com o atendimento.`;
 
-        enviarNotificacaoWhatsApp(cliente.telefone, msgAtualizacao);
+          await enviarNotificacaoWhatsApp(cliente.telefone, msgAtualizacao);
+        }
+      } catch (waErr) {
+        console.error('[WhatsApp Aviso] Erro ao enviar notificação de status:', waErr.message);
       }
     }
 
-    res.json({ mensagem: 'Status atualizado com sucesso!', chamado });
+    res.json({ mensagem: 'Chamado atualizado com sucesso!', chamado });
   } catch (error) {
-    console.error('Erro ao atualizar status:', error);
-    res.status(500).json({ error: 'Erro ao atualizar status.' });
+    console.error('Erro ao atualizar chamado:', error);
+    res.status(500).json({ error: 'Erro interno ao atualizar chamado: ' + error.message });
   }
 });
 
