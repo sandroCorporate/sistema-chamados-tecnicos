@@ -22,9 +22,10 @@ const mpClient = new MercadoPagoConfig({
 app.use(express.json());
 
 // ==========================================
-// FUNÇÃO AUXILIAR: Envio de WhatsApp (Z-API Fixa)
+// FUNÇÃO AUXILIAR: Envio de WhatsApp (Z-API Oficial Corrigida)
 // ==========================================
 async function enviarNotificacaoWhatsApp(telefone, mensagem) {
+  // URL estruturada com o Token embutido no caminho oficial da Z-API
   const waUrl = 'https://api.z-api.io/instances/3FA96A6E1C7E826EA6682AB027F8477F/token/B2F6CE0E3D44D70B12975971/send-text';
   const waKey = 'B2F6CE0E3D44D70B12975971';
 
