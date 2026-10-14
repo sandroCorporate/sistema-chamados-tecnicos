@@ -43,7 +43,9 @@ async function enviarNotificacaoWhatsApp(telefone, mensagem) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'client-token': waKey,
         'Client-Token': waKey,
+        'Client-token': waKey,
       },
       body: JSON.stringify({
         phone: numApenasDigitos,
