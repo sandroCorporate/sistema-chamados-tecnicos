@@ -576,7 +576,7 @@
       window.salvarEdicao = async function (event, id) {
         event.preventDefault();
         const inputTitulo = document.getElementById('input-edit-titulo-' + id);
-        const inputDesc = document.getElementById('input-edit-desc-' id);
+        const inputDesc = document.getElementById('input-edit-desc-' + id);
 
         try {
           const res = await fetch('/api/chamados/' + id + '/editar', {
