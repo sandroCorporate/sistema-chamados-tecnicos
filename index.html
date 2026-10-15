@@ -3,264 +3,289 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LL TECH INFO - Sistema de Chamados Técnicos</title>
+    <title>LL TECH INFO - Sistema de Chamados Técnicos & Consultoria</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
       * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       }
 
       body {
-        background-color: #f1f5f9;
-        color: #334155;
+        background-color: #0b1329;
+        color: #f1f5f9;
+        min-height: 100vh;
         display: flex;
         justify-content: center;
         align-items: center;
-        min-height: 100vh;
-        padding: 20px;
+        padding: 16px;
       }
 
-      .container {
-        background: #ffffff;
-        width: 100%;
-        max-width: 550px;
-        padding: 24px;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-      }
-
-      /* CABEÇALHO CORPORATIVO 5S - LL TECH INFO */
-      .app-header {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        background: #1e232a;
-        color: #ffffff;
-        padding: 15px 20px;
-        border-radius: 6px;
-        margin-bottom: 20px;
-        border-bottom: 4px solid #0056b3;
-      }
-
-      .app-header img {
-        height: 48px;
-        width: auto;
-        object-fit: contain;
-      }
-
-      .app-header h1 {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #ffffff;
-        margin: 0;
-        letter-spacing: 0.5px;
-      }
-
-      .app-header small {
-        color: #cbd5e0;
-        font-size: 0.8rem;
-      }
-
-      h2, h3, h4 {
-        color: #1e293b;
-        margin-bottom: 16px;
-      }
-
-      .form-group {
-        margin-bottom: 14px;
-      }
-
-      label {
-        display: block;
-        font-size: 13px;
-        font-weight: 600;
-        margin-bottom: 5px;
-        color: #475569;
-      }
-
-      input, textarea, select {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
-        font-size: 14px;
-        outline: none;
-      }
-
-      input:focus, textarea:focus, select:focus {
-        border-color: #2563eb;
-      }
-
-      button {
-        width: 100%;
-        background-color: #2563eb;
-        color: white;
-        border: none;
-        padding: 10px;
-        border-radius: 6px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background-color 0.2s;
-      }
-
-      button:hover {
-        background-color: #1d4ed8;
-      }
-
-      .btn-danger {
-        background-color: #ef4444;
-      }
-      .btn-danger:hover {
-        background-color: #dc2626;
-      }
+      /* Utilitários e Estilos do Sistema */
+      .hidden { display: none !important; }
+      
+      .text-amber-golden { color: #f59e0b; }
+      .bg-amber-golden { background-color: #f59e0b; }
 
       .card {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 14px;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 16px;
         margin-bottom: 12px;
       }
 
       .badge {
         display: inline-block;
-        padding: 2px 8px;
+        padding: 3px 10px;
         border-radius: 12px;
         font-size: 11px;
         font-weight: 700;
+        text-transform: uppercase;
       }
 
-      .badge-ABERTO { background-color: #fef3c7; color: #d97706; }
-      .badge-AGUARDANDO_PAGAMENTO, .badge-AGUARDANDO\ PAGAMENTO { background-color: #ffedd5; color: #c2410c; }
-      .badge-EM_ATENDIMENTO, .badge-EM\ ATENDIMENTO { background-color: #dbeafe; color: #2563eb; }
-      .badge-CONCLUIDO { background-color: #dcfce7; color: #16a34a; }
-
-      .hidden { display: none !important; }
-
-      .header-user {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-        border-bottom: 1px solid #e2e8f0;
-        padding-bottom: 12px;
-      }
+      .badge-ABERTO { background-color: #78350f; color: #fef3c7; }
+      .badge-AGUARDANDO_PAGAMENTO, .badge-AGUARDANDO\ PAGAMENTO { background-color: #7c2d12; color: #ffedd5; }
+      .badge-EM_ATENDIMENTO, .badge-EM\ ATENDIMENTO { background-color: #1e3a8a; color: #dbeafe; }
+      .badge-CONCLUIDO { background-color: #14532d; color: #dcfce7; }
 
       .msg {
-        padding: 10px;
-        border-radius: 6px;
+        padding: 10px 14px;
+        border-radius: 8px;
         font-size: 13px;
         margin-top: 10px;
+        font-weight: 500;
       }
-      .msg-error { background-color: #fee2e2; color: #991b1b; }
-      .msg-success { background-color: #dcfce7; color: #166534; }
-      .pix-box { background: #fff; border: 1px dashed #f97316; padding: 10px; border-radius: 6px; margin-top: 10px; text-align: center; }
+      .msg-error { background-color: #451a1a; color: #fca5a5; border: 1px solid #7f1d1d; }
+      .msg-success { background-color: #143823; color: #86efac; border: 1px solid #14532d; }
+      .pix-box { background: #0f172a; border: 1px dashed #f97316; padding: 12px; border-radius: 8px; margin-top: 12px; text-align: center; }
 
-      .tab-auth {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 15px;
+      /* Estilo dos Inputs Legados mantendo responsividade */
+      input, textarea, select {
+        width: 100%;
+        padding: 10px 12px;
+        background-color: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #ffffff;
+        outline: none;
+        transition: border-color 0.2s;
       }
+
+      input:focus, textarea:focus, select:focus {
+        border-color: #f59e0b;
+      }
+
+      label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #cbd5e1;
+      }
+
+      button {
+        transition: all 0.2s;
+      }
+
       .tab-auth button {
-        background: #e2e8f0;
-        color: #475569;
+        background: transparent;
+        color: #94a3b8;
       }
       .tab-auth button.active {
-        background: #2563eb;
-        color: white;
+        background: #f59e0b;
+        color: #0f172a;
+        font-weight: 700;
       }
 
-      @media (max-width: 480px) {
-        body { padding: 8px; align-items: flex-start; }
-        .container { padding: 16px; border-radius: 0; box-shadow: none; min-height: 100vh; }
-        input, textarea, select, button { font-size: 16px; padding: 12px; }
-        .header-user { flex-direction: column; align-items: flex-start; gap: 10px; }
-        .header-user button { align-self: flex-end; width: auto; }
+      @media (max-width: 768px) {
+        body { padding: 8px; }
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <!-- Cabeçalho Institucional LL TECH INFO -->
-      <div class="app-header">
-        <img src="/logo.png" alt="LL TECH INFO" />
-        <div>
-          <h1>LL TECH INFO</h1>
-          <small>Soluções em Informática & Suporte Técnico</small>
-        </div>
-      </div>
+    
+    <div class="w-full max-w-5xl bg-[#0f172a] rounded-2xl shadow-2xl overflow-hidden border border-slate-800">
+      
+      <!-- TELA DE ACESSO (LOGIN / REGISTO) -->
+      <div id="screen-login" class="grid grid-cols-1 md:grid-cols-12 min-h-[620px]">
+        
+        <!-- LADO ESQUERDO: Vitrine de Serviços e Identidade Visual -->
+        <div class="md:col-span-6 bg-gradient-to-br from-[#0a1128] via-[#0d1b3e] to-[#111827] p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-800 relative overflow-hidden">
+          
+          <div class="absolute -top-24 -left-24 w-60 h-60 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-      <!-- Tela de Acesso (Login / Registo) -->
-      <div id="screen-login">
-        <div class="tab-auth">
-          <button type="button" id="btn-tab-login" class="active" onclick="alternarAba('login')">Entrar</button>
-          <button type="button" id="btn-tab-registro" onclick="alternarAba('registro')">Criar Conta</button>
-        </div>
-
-        <!-- Formulário de Login -->
-        <div id="box-login">
-          <h2>Entrar no Sistema</h2>
-          <div id="login-msg"></div>
-          <form id="form-login" style="margin-top: 15px">
-            <div class="form-group">
-              <label>E-mail</label>
-              <input type="email" id="login-email" required placeholder="seu.email@exemplo.com" />
-            </div>
-            <div class="form-group">
-              <label>Senha</label>
-              <input type="password" id="login-senha" required placeholder="••••••••" />
-            </div>
-            <button type="submit">Entrar</button>
-          </form>
-        </div>
-
-        <!-- Formulário de Registo de Cliente -->
-        <div id="box-registro" class="hidden">
-          <h2>Registo de Novo Cliente</h2>
-          <div id="reg-msg"></div>
-          <form id="form-registro" style="margin-top: 15px">
-            <div class="form-group">
-              <label>Nome Completo</label>
-              <input type="text" id="reg-nome" required placeholder="Nome Completo" />
-            </div>
-            <div class="form-group">
-              <label>E-mail</label>
-              <input type="email" id="reg-email" required placeholder="seu.email@exemplo.com" />
-            </div>
-            <div class="form-group">
-              <label>WhatsApp (com DDD)</label>
-              <input type="text" id="reg-telefone" required placeholder="92991112233" />
-            </div>
-            <div class="form-group">
-              <label>CPF ou CNPJ</label>
-              <input type="text" id="reg-documento" required placeholder="000.000.000-00" />
-            </div>
-            <div class="form-group">
-              <label>Senha</label>
-              <input type="password" id="reg-senha" required placeholder="••••••••" />
-            </div>
-            <button type="submit" style="background-color: #10b981;">Concluir Registo</button>
-          </form>
-        </div>
-      </div>
-
-      <!-- Painel Principal (Dashboard) -->
-      <div id="screen-dashboard" class="hidden">
-        <div class="header-user">
           <div>
-            <h3 style="margin: 0">Painel de Atendimento</h3>
-            <small id="user-info" style="color: #64748b"></small>
+            <!-- Cabeçalho Institucional -->
+            <div class="flex items-center gap-3 mb-6">
+              <img src="/logo.png" alt="LL TECH INFO" class="h-12 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('logo-fallback').classList.remove('hidden');" />
+              <div id="logo-fallback" class="hidden w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 text-2xl">
+                <i class="fa-solid fa-gears"></i>
+              </div>
+              <div>
+                <h1 class="text-2xl font-extrabold tracking-tight text-white">
+                  LL TECH <span class="text-amber-golden">INFO</span>
+                </h1>
+                <p class="text-xs text-slate-400 font-medium">Assistência Técnica & Consultoria</p>
+              </div>
+            </div>
+
+            <p class="text-slate-300 text-sm mb-6 leading-relaxed">
+              Atendimento técnico especializado com agilidade, transparência e acompanhamento em tempo real do seu chamado.
+            </p>
+
+            <!-- Lista de Serviços Especializados da Empresa -->
+            <div class="space-y-3 my-6">
+              <p class="text-xs font-bold text-amber-500 uppercase tracking-wider mb-2">Serviços Especializados</p>
+              
+              <div class="grid grid-cols-2 gap-2 text-sm">
+                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800">
+                  <i class="fa-solid fa-laptop text-amber-500 text-base w-5 text-center"></i>
+                  <span class="text-slate-200 font-medium text-xs">Notebooks</span>
+                </div>
+
+                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800">
+                  <i class="fa-solid fa-tablet-screen-button text-amber-500 text-base w-5 text-center"></i>
+                  <span class="text-slate-200 font-medium text-xs">Tablets</span>
+                </div>
+
+                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800">
+                  <i class="fa-solid fa-desktop text-amber-500 text-base w-5 text-center"></i>
+                  <span class="text-slate-200 font-medium text-xs">Computadores</span>
+                </div>
+
+                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800">
+                  <i class="fa-solid fa-mobile-screen-button text-amber-500 text-base w-5 text-center"></i>
+                  <span class="text-slate-200 font-medium text-xs">Smartphone</span>
+                </div>
+
+                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800">
+                  <i class="fa-solid fa-network-wired text-amber-500 text-base w-5 text-center"></i>
+                  <span class="text-slate-200 font-medium text-xs">Rede de PCs</span>
+                </div>
+
+                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800">
+                  <i class="fa-solid fa-wifi text-amber-500 text-base w-5 text-center"></i>
+                  <span class="text-slate-200 font-medium text-xs">Redes Wi-Fi</span>
+                </div>
+
+                <div class="col-span-2 flex items-center gap-2.5 p-2.5 rounded-lg bg-slate-900/80 border border-amber-500/30">
+                  <i class="fa-solid fa-building text-amber-500 text-base w-5 text-center"></i>
+                  <span class="text-slate-100 font-semibold text-xs">Gestão de TI & Consultoria</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <button id="btn-logout" class="btn-danger" style="width: auto; padding: 6px 12px">Sair</button>
+
+          <!-- Rodapé do Lado Esquerdo / Contactos Físicos -->
+          <div class="pt-4 border-t border-slate-800/80 text-xs text-slate-400 space-y-1.5">
+            <p class="flex items-center gap-2">
+              <i class="fa-brands fa-whatsapp text-emerald-400 text-sm"></i>
+              <span class="font-semibold text-slate-200">(92) 98604-0401</span>
+            </p>
+            <p class="flex items-center gap-2">
+              <i class="fa-solid fa-location-dot text-amber-500 text-xs"></i>
+              <span>R. São Vicente, Morro da Liberdade, 39A</span>
+            </p>
+            <p class="text-[11px] text-slate-500">
+              Atendimento: Seg a Sex 09h-17h | Sáb 09h-12h
+            </p>
+          </div>
+        </div>
+
+        <!-- LADO DIREITO: Painel de Acesso (Login / Cadastro) -->
+        <div class="md:col-span-6 p-6 md:p-8 flex flex-col justify-center bg-[#0f172a]">
+          <div class="max-w-sm mx-auto w-full">
+            
+            <div class="text-center mb-6">
+              <h2 class="text-2xl font-bold text-white">Painel de Atendimento</h2>
+              <p class="text-slate-400 text-xs mt-1">Aceda para gerir os seus chamados técnicos</p>
+            </div>
+
+            <!-- Abas Alternadoras (Login / Criar Conta) -->
+            <div class="tab-auth flex bg-slate-900 p-1 rounded-xl mb-6 border border-slate-800">
+              <button type="button" id="btn-tab-login" class="active flex-1 py-2 text-xs font-semibold rounded-lg" onclick="alternarAba('login')">Entrar</button>
+              <button type="button" id="btn-tab-registro" class="flex-1 py-2 text-xs font-semibold rounded-lg" onclick="alternarAba('registro')">Criar Conta</button>
+            </div>
+
+            <!-- Formulário de Login -->
+            <div id="box-login">
+              <div id="login-msg"></div>
+              <form id="form-login" class="space-y-4">
+                <div class="form-group">
+                  <label>E-mail</label>
+                  <input type="email" id="login-email" required placeholder="seu.email@exemplo.com" />
+                </div>
+                <div class="form-group">
+                  <label>Senha</label>
+                  <input type="password" id="login-senha" required placeholder="••••••••" />
+                </div>
+                <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm shadow-lg shadow-amber-500/20 mt-2">
+                  Aceder ao Portal
+                </button>
+              </form>
+            </div>
+
+            <!-- Formulário de Registo de Cliente -->
+            <div id="box-registro" class="hidden">
+              <div id="reg-msg"></div>
+              <form id="form-registro" class="space-y-3">
+                <div class="form-group">
+                  <label>Nome Completo</label>
+                  <input type="text" id="reg-nome" required placeholder="Nome Completo" />
+                </div>
+                <div class="form-group">
+                  <label>E-mail</label>
+                  <input type="email" id="reg-email" required placeholder="seu.email@exemplo.com" />
+                </div>
+                <div class="form-group">
+                  <label>WhatsApp (com DDD)</label>
+                  <input type="text" id="reg-telefone" required placeholder="92991112233" />
+                </div>
+                <div class="form-group">
+                  <label>CPF ou CNPJ</label>
+                  <input type="text" id="reg-documento" required placeholder="000.000.000-00" />
+                </div>
+                <div class="form-group">
+                  <label>Senha</label>
+                  <input type="password" id="reg-senha" required placeholder="••••••••" />
+                </div>
+                <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm shadow-lg mt-2">
+                  Concluir Registo
+                </button>
+              </form>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PAINEL PRINCIPAL (DASHBOARD) -->
+      <div id="screen-dashboard" class="p-6 md:p-8 hidden">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-4 mb-6 border-b border-slate-800 gap-4">
+          <div class="flex items-center gap-3">
+            <img src="/logo.png" alt="LL TECH INFO" class="h-10 w-auto" onerror="this.style.display='none'" />
+            <div>
+              <h3 class="text-xl font-bold text-white">Painel de Atendimento</h3>
+              <p id="user-info" class="text-xs text-slate-400"></p>
+            </div>
+          </div>
+          <button id="btn-logout" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs rounded-lg transition-colors">
+            <i class="fa-solid fa-right-from-bracket mr-1"></i> Sair
+          </button>
         </div>
 
         <!-- Formulário de Abrir Chamado (Apenas CLIENTE) -->
-        <div id="section-novo-chamado" class="card" style="margin-bottom: 20px">
-          <h4 style="margin-bottom: 10px">Abrir Novo Chamado</h4>
+        <div id="section-novo-chamado" class="card mb-6">
+          <h4 class="text-base font-bold text-white mb-3">Abrir Novo Chamado</h4>
           <div id="chamado-msg"></div>
-          <form id="form-chamado">
+          <form id="form-chamado" class="space-y-4">
             <div class="form-group">
               <label>Título</label>
               <input type="text" id="chamado-titulo" required placeholder="Ex: Substituição de Disco Rígido" />
@@ -269,17 +294,21 @@
               <label>Descrição</label>
               <textarea id="chamado-descricao" rows="3" required placeholder="Descreva detalhadamente o problema..."></textarea>
             </div>
-            <button type="submit">Enviar Chamado</button>
+            <button type="submit" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-sm">
+              Enviar Chamado
+            </button>
           </form>
         </div>
 
-        <h3>Chamados Registados</h3>
+        <h3 class="text-lg font-bold text-white mb-4">Chamados Registados</h3>
         <div id="lista-chamados">
-          <p style="color: #64748b">Carregando...</p>
+          <p class="text-slate-400 text-sm">Carregando chamados...</p>
         </div>
       </div>
+
     </div>
 
+    <!-- JAVASCRIPT DO SISTEMA (PRESERVADO COM TODAS AS REGRAS E APIS) -->
     <script>
       let token = localStorage.getItem('token');
       let usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
@@ -418,7 +447,7 @@
           if (!res.ok) throw new Error(chamados.error || 'Erro ao buscar chamados.');
 
           if (chamados.length === 0) {
-            listaDiv.innerHTML = '<p style="color: #64748b;">Nenhum chamado encontrado.</p>';
+            listaDiv.innerHTML = '<p class="text-slate-400 text-sm">Nenhum chamado encontrado.</p>';
             return;
           }
 
@@ -432,40 +461,40 @@
 
             htmlContent += '<div class="card" id="card-' + c.id + '">';
             htmlContent += '<div style="display: flex; justify-content: space-between; align-items: start;">';
-            htmlContent += '<h4 id="titulo-' + c.id + '">' + c.titulo + '</h4>';
+            htmlContent += '<h4 id="titulo-' + c.id + '" style="font-weight: 700; color: #ffffff;">' + c.titulo + '</h4>';
             htmlContent += '<span class="badge badge-' + statusClass + '">' + c.status + '</span>';
             htmlContent += '</div>';
-            htmlContent += '<p id="desc-' + c.id + '" style="margin-top: 8px; color: #475569;">' + c.descricao + '</p>';
-            htmlContent += '<small style="color: #94a3b8; display: block; margin-top: 8px;">Criado em: ' + dataCriacao + '</small>';
+            htmlContent += '<p id="desc-' + c.id + '" style="margin-top: 8px; color: #cbd5e1; font-size: 13px;">' + c.descricao + '</p>';
+            htmlContent += '<small style="color: #64748b; display: block; margin-top: 8px; font-size: 11px;">Criado em: ' + dataCriacao + '</small>';
 
             if (valorNum > 0) {
-              htmlContent += '<small style="color: #0284c7; display: block; font-weight: bold; margin-top: 4px;">Valor: R$ ' + valorNum.toFixed(2) + '</small>';
+              htmlContent += '<small style="color: #38bdf8; display: block; font-weight: bold; margin-top: 4px; font-size: 12px;">Valor: R$ ' + valorNum.toFixed(2) + '</small>';
             }
 
             htmlContent += '<div id="pix-container-' + c.id + '" class="pix-box hidden">';
-            htmlContent += '<p style="font-size: 12px; font-weight: bold; color: #c2410c; margin-bottom: 5px;">Escaneie o QR Code ou copie o Pix:</p>';
-            htmlContent += '<img id="pix-img-' + c.id + '" src="" alt="QR Code Pix" style="max-width: 150px; display: block; margin: 0 auto 8px auto;" />';
-            htmlContent += '<textarea id="pix-copia-' + c.id + '" rows="2" style="font-size: 11px; resize: none;" readonly></textarea>';
-            htmlContent += '<button type="button" onclick="window.copiarPix(\'' + c.id + '\')" style="margin-top: 6px; background-color: #f97316; font-size: 12px; padding: 6px;">Copiar Código Pix</button>';
+            htmlContent += '<p style="font-size: 12px; font-weight: bold; color: #f97316; margin-bottom: 6px;">Escaneie o QR Code ou copie o Pix:</p>';
+            htmlContent += '<img id="pix-img-' + c.id + '" src="" alt="QR Code Pix" style="max-width: 150px; display: block; margin: 0 auto 8px auto; border-radius: 6px;" />';
+            htmlContent += '<textarea id="pix-copia-' + c.id + '" rows="2" style="font-size: 11px; resize: none; background: #020617;" readonly></textarea>';
+            htmlContent += '<button type="button" onclick="window.copiarPix(\'' + c.id + '\')" style="margin-top: 8px; background-color: #f97316; font-size: 12px; padding: 8px; width: 100%; border-radius: 6px; font-weight: bold; color: #fff;">Copiar Código Pix</button>';
             htmlContent += '</div>';
 
             if (isCliente && c.status === 'ABERTO') {
-              htmlContent += '<div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 8px; display: flex; gap: 5px;">';
-              htmlContent += '<button type="button" class="btn-toggle-edicao" data-id="' + c.id + '" style="background-color: #f59e0b; width: auto; padding: 5px 12px; font-size: 12px; color: white; border: none; border-radius: 6px; cursor: pointer;">Editar</button>';
+              htmlContent += '<div style="margin-top: 10px; border-top: 1px solid #334155; padding-top: 8px; display: flex; gap: 5px;">';
+              htmlContent += '<button type="button" class="btn-toggle-edicao" data-id="' + c.id + '" style="background-color: #f59e0b; width: auto; padding: 6px 14px; font-size: 12px; color: #0f172a; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Editar</button>';
               htmlContent += '</div>';
               htmlContent += '<form id="form-edit-' + c.id + '" class="hidden" style="margin-top: 10px;" onsubmit="window.salvarEdicao(event, \'' + c.id + '\')">';
-              htmlContent += '<input type="text" id="input-edit-titulo-' + c.id + '" value="' + c.titulo.replace(/"/g, '&quot;') + '" style="margin-bottom: 5px;" required>';
-              htmlContent += '<textarea id="input-edit-desc-' + c.id + '" rows="2" style="margin-bottom: 5px;" required>' + c.descricao + '</textarea>';
-              htmlContent += '<div style="display: flex; gap: 5px;">';
-              htmlContent += '<button type="submit" style="background-color: #10b981; width: auto; padding: 5px 12px; font-size: 12px;">Guardar</button>';
-              htmlContent += '<button type="button" class="btn-toggle-edicao" data-id="' + c.id + '" style="background-color: #64748b; width: auto; padding: 5px 12px; font-size: 12px;">Cancelar</button>';
+              htmlContent += '<input type="text" id="input-edit-titulo-' + c.id + '" value="' + c.titulo.replace(/"/g, '&quot;') + '" style="margin-bottom: 6px;" required>';
+              htmlContent += '<textarea id="input-edit-desc-' + c.id + '" rows="2" style="margin-bottom: 6px;" required>' + c.descricao + '</textarea>';
+              htmlContent += '<div style="display: flex; gap: 6px;">';
+              htmlContent += '<button type="submit" style="background-color: #10b981; width: auto; padding: 6px 14px; font-size: 12px; font-weight: bold; border-radius: 6px;">Guardar</button>';
+              htmlContent += '<button type="button" class="btn-toggle-edicao" data-id="' + c.id + '" style="background-color: #64748b; width: auto; padding: 6px 14px; font-size: 12px; font-weight: bold; border-radius: 6px;">Cancelar</button>';
               htmlContent += '</div>';
               htmlContent += '</form>';
             }
 
             if (isCliente && (c.status === 'AGUARDANDO_PAGAMENTO' || c.status === 'AGUARDANDO PAGAMENTO') && !c.pagamento_id) {
-              htmlContent += '<div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 8px;">';
-              htmlContent += '<button type="button" onclick="window.gerarPix(\'' + c.id + '\',' + (c.valor || 0.03) + ')" style="background-color: #f97316; font-size: 12px; padding: 8px;">Pagar com Pix</button>';
+              htmlContent += '<div style="margin-top: 10px; border-top: 1px solid #334155; padding-top: 8px;">';
+              htmlContent += '<button type="button" onclick="window.gerarPix(\'' + c.id + '\',' + (c.valor || 0.03) + ')" style="background-color: #f97316; font-size: 12px; padding: 8px 16px; border-radius: 6px; font-weight: bold; color: white;">Pagar com Pix</button>';
               htmlContent += '</div>';
             }
 
@@ -475,23 +504,23 @@
               const selEmAtendimento = (c.status === 'EM ATENDIMENTO' || c.status === 'EM_ATENDIMENTO') ? 'selected' : '';
               const selConcluido = c.status === 'CONCLUIDO' ? 'selected' : '';
 
-              htmlContent += '<div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 8px;">';
+              htmlContent += '<div style="margin-top: 10px; border-top: 1px solid #334155; padding-top: 8px;">';
               htmlContent += '<div style="display: flex; gap: 8px; align-items: flex-end; margin-bottom: 6px;">';
               htmlContent += '<div style="flex: 1;">';
-              htmlContent += '<label style="font-size: 12px;">Status:</label>';
-              htmlContent += '<select id="select-status-' + c.id + '" style="margin-top: 4px;">';
+              htmlContent += '<label style="font-size: 11px;">Status:</label>';
+              htmlContent += '<select id="select-status-' + c.id + '" style="margin-top: 2px;">';
               htmlContent += '<option value="ABERTO" ' + selAberto + '>ABERTO</option>';
               htmlContent += '<option value="AGUARDANDO PAGAMENTO" ' + selAguardando + '>AGUARDANDO PAGAMENTO</option>';
               htmlContent += '<option value="EM ATENDIMENTO" ' + selEmAtendimento + '>EM ATENDIMENTO</option>';
               htmlContent += '<option value="CONCLUIDO" ' + selConcluido + '>CONCLUIDO</option>';
               htmlContent += '</select>';
               htmlContent += '</div>';
-              htmlContent += '<div style="width: 90px;">';
-              htmlContent += '<label style="font-size: 12px;">Valor (R$):</label>';
-              htmlContent += '<input type="number" step="0.01" id="input-val-' + c.id + '" value="' + (c.valor || '0.03') + '" style="margin-top: 4px; padding: 8px;" />';
+              htmlContent += '<div style="width: 100px;">';
+              htmlContent += '<label style="font-size: 11px;">Valor (R$):</label>';
+              htmlContent += '<input type="number" step="0.01" id="input-val-' + c.id + '" value="' + (c.valor || '0.03') + '" style="margin-top: 2px;" />';
               htmlContent += '</div>';
               htmlContent += '</div>';
-              htmlContent += '<button type="button" onclick="window.salvarDadosTecnico(\'' + c.id + '\')" style="background-color: #10b981; font-size: 12px; padding: 6px;">Guardar Alterações</button>';
+              htmlContent += '<button type="button" onclick="window.salvarDadosTecnico(\'' + c.id + '\')" style="background-color: #10b981; font-size: 12px; padding: 8px 14px; border-radius: 6px; font-weight: bold; color: white;">Guardar Alterações</button>';
               htmlContent += '</div>';
             }
 
