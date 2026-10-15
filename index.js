@@ -436,6 +436,12 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
         if (cliente && cliente.telefone) {
           const idCurto = String(chamado.id).substring(0, 8);
           const valorFormatado = chamado.valor ? parseFloat(chamado.valor).toFixed(2) : '0.00';
+          
+          let linhaValor = '';
+          if (chamado.valor) {
+            linhaValor = '💰 *Valor do Serviço:* ' + 'R' + '\$ ' + valorFormatado;
+          }
+
           const msgAtualizacao = `🖥️ *LL TECH INFO - ATUALIZAÇÃO DE CHAMADO*
 ----------------------------------------
 Olá, *${cliente.nome}*!
@@ -444,7 +450,7 @@ O seu chamado *#${idCurto}* foi atualizado pela nossa equipa técnica.
 
 📌 *Assunto:* ${chamado.titulo}
 🔄 *Novo Status:* ${String(chamado.status).toUpperCase()}
-${chamado.valor ? `💰 *Valor do Serviço:* R\$ \${valorFormatado}` : ''}
+${linhaValor}
 
 Aceda ao portal para efetuar o pagamento via Pix e prosseguir com o atendimento.`;
 
