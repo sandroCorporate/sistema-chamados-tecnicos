@@ -318,7 +318,7 @@
       function showDashboard() {
         screenLogin.classList.add('hidden');
         screenDashboard.classList.remove('hidden');
-        document.getElementById('user-info').innerText = `${usuario.nome} (${usuario.tipo}) - ${usuario.email}`;
+        document.getElementById('user-info').innerText = `${usuario.nome} (${usuario.tipo}) - ${usuario.email}[cite: 18]`;
 
         if (usuario.tipo === 'CLIENTE' || usuario.tipo === 'cliente') {
           document.getElementById('section-novo-chamado').classList.remove('hidden');
@@ -515,26 +515,28 @@
       });
 
       window.salvarDadosTecnico = async function(id) {
-        const novoStatus = document.getElementById(`select-status-${id}`).value;
-        const novoValor = document.getElementById(`input-val-${id}`).value;
+        const selectEl = document.getElementById(`select-status-${id}`);
+        const inputEl = document.getElementById(`input-val-${id}`);
+        
+        if (!selectEl || !inputEl) {
+          alert('Erro: Elementos do formulário não encontrados.');
+          return;
+        }
+
+        const novoStatus = selectEl.value;
+        const novoValor = parseFloat(inputEl.value) || 0.03;
 
         try {
-          await fetch(`/api/chamados/${id}/valor`, {
+          const res = await fetch(`/api/chamados/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ valor: parseFloat(novoValor) }),
+            body: JSON.stringify({ status: novoStatus, valor: novoValor }),
           });
 
-          const resStatus = await fetch(`/api/chamados/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ status: novoStatus }),
-          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Erro ao atualizar chamado.');
 
-          const data = await resStatus.json();
-          if (!resStatus.ok) throw new Error(data.error || 'Erro ao atualizar status.');
-
-          alert('Chamado atualizado com sucesso!');
+          alert('Alterações salvas com sucesso!');
           carregarChamados();
         } catch (err) {
           alert('Erro ao guardar: ' + err.message);
