@@ -350,18 +350,22 @@ Efetue o pagamento para darmos seguimento ao atendimento.`;
 });
 
 // ==========================================
-// ROTA: Webhook Mercado Pago
+// ROTA: Webhook Mercado Pago (Tratamento Robusto)
 // ==========================================
 app.post('/api/webhook/mercadopago', async (req, res) => {
   try {
-    const { action, data } = req.body;
+    const { action, type, data } = req.body;
+    const queryId = req.query['data.id'] || req.query.id;
 
-    if (action === 'payment.created' || action === 'payment.updated') {
-      const paymentId = data.id;
+    // Obtém o ID do pagamento enviado via Body ou Query String
+    const paymentId = data?.id || queryId;
+
+    if (paymentId && (type === 'payment' || action?.includes('payment'))) {
       const payment = new Payment(mpClient);
       const paymentInfo = await payment.get({ id: paymentId });
 
-      if (paymentInfo.status === 'approved') {
+      if (paymentInfo && paymentInfo.status === 'approved') {
+        // Atualiza na base de dados Neon
         const updateRes = await db.query(
           "UPDATE chamados SET status = 'EM ATENDIMENTO' WHERE pagamento_id = \$1 RETURNING *",
           [String(paymentId)]
@@ -370,29 +374,61 @@ app.post('/api/webhook/mercadopago', async (req, res) => {
         if (updateRes.rows.length > 0) {
           const ch = updateRes.rows[0];
           const userId = ch.usuario_id || ch.cliente_id || ch.usuarioid;
+          
           if (userId) {
             const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = \$1', [userId]);
             const cliente = userRes.rows[0];
+            
             if (cliente && cliente.telefone) {
               const msgAprovado = `🖥️ *LL TECH INFO - PAGAMENTO CONFIRMADO*
 ----------------------------------------
 Olá, *${cliente.nome}*!
 
-O pagamento do chamado *#${ch.id.substring(0, 8)}* foi aprovado com sucesso.
+O pagamento do chamado *#${ch.id.substring(0, 8)}* foi aprovado com sucesso!
 🟢 *Status Atual:* EM ATENDIMENTO
 
-A nossa equipa técnica já está a atuar no seu caso.`;
-              enviarNotificacaoWhatsApp(cliente.telefone, msgAprovado);
+A nossa equipa técnica já iniciou o atendimento.`;
+              await enviarNotificacaoWhatsApp(cliente.telefone, msgAprovado);
             }
           }
         }
       }
     }
 
-    res.status(200).send('OK');
+    return res.status(200).send('OK');
   } catch (error) {
-    console.error('Erro no webhook do Mercado Pago:', error);
-    res.status(500).json({ error: 'Erro ao processar webhook.' });
+    console.error('[Webhook Erro]:', error.message);
+    return res.status(200).send('OK'); // Retorna 200 para evitar retentativas excessivas do MP
+  }
+});
+
+// ==========================================
+// ROTA AUXILIAR: Verificar Status do Pagamento (Checagem Direta)
+// ==========================================
+app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const chamadoRes = await db.query('SELECT * FROM chamados WHERE id = \$1', [id]);
+    
+    if (chamadoRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Chamado não encontrado.' });
+    }
+
+    const chamado = chamadoRes.rows[0];
+
+    if (chamado.pagamento_id && chamado.status === 'AGUARDANDO PAGAMENTO') {
+      const payment = new Payment(mpClient);
+      const paymentInfo = await payment.get({ id: chamado.pagamento_id });
+
+      if (paymentInfo && paymentInfo.status === 'approved') {
+        await db.query("UPDATE chamados SET status = 'EM ATENDIMENTO' WHERE id = \$1", [id]);
+        return res.json({ status: 'EM ATENDIMENTO', pago: true });
+      }
+    }
+
+    return res.json({ status: chamado.status, pago: chamado.status !== 'AGUARDANDO PAGAMENTO' });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 });
 
