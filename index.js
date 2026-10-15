@@ -439,7 +439,7 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
           
           let linhaValor = '';
           if (chamado.valor) {
-            linhaValor = '💰 *Valor do Serviço:* ' + 'R' + '\$ ' + valorFormatado;
+            linhaValor = '💰 *Valor do Serviço:* R$ ' + valorFormatado;
           }
 
           const msgAtualizacao = `🖥️ *LL TECH INFO - ATUALIZAÇÃO DE CHAMADO*
