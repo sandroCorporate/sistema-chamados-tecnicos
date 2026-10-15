@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'chave_secreta_super_segura';
 
 // Token real do Mercado Pago integrado
-const MP_TOKEN_REAL = 'TEST-13eb31fe-4738-400a-ba0c-75382fc3d471';
+const MP_TOKEN_REAL = 'APP_USR-5595843191696827-101213-f5e5271648f3f70353dbc57f81016599-332217735';
 
 // Inicializa o cliente do Mercado Pago
 const mpClient = new MercadoPagoConfig({
