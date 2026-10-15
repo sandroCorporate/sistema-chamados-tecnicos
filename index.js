@@ -274,6 +274,17 @@ app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
     }
     const chamado = chamadoRes.rows[0];
 
+    // Busca os dados do usuário/cliente logado (incluindo documento e telefone)
+    const userRes = await db.query('SELECT nome, email, telefone, documento FROM usuarios WHERE id = \$1', [req.usuario.id]);
+    const cliente = userRes.rows[0] || {};
+
+    // Limpa o documento para enviar apenas números (exigido pelo Mercado Pago)
+    let docLimpo = cliente.documento ? cliente.documento.replace(/\D/g, '') : '00000000000';
+    if (docLimpo.length !== 11 && docLimpo.length !== 14) {
+      docLimpo = '12345678909'; // Fallback padrão caso o documento esteja incompleto
+    }
+    const tipoDoc = docLimpo.length === 14 ? 'CNPJ' : 'CPF';
+
     let pagamentoId, qrCode, qrCodeBase64;
 
     try {
@@ -283,9 +294,13 @@ app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
         description: `LL TECH INFO - Chamado #${chamado.id.substring(0, 8)}`,
         payment_method_id: 'pix',
         payer: {
-          email: req.usuario.email || 'suporte@lltech.info',
-          first_name: 'Cliente',
-          last_name: 'LL Tech',
+          email: cliente.email || req.usuario.email || 'suporte@lltech.info',
+          first_name: cliente.nome ? cliente.nome.split(' ')[0] : 'Cliente',
+          last_name: cliente.nome ? cliente.nome.split(' ').slice(1).join(' ') || 'LL Tech' : 'LL Tech',
+          identification: {
+            type: tipoDoc,
+            number: docLimpo
+          }
         },
       };
 
@@ -293,11 +308,13 @@ app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
       qrCode = response?.point_of_interaction?.transaction_data?.qr_code;
       qrCodeBase64 = response?.point_of_interaction?.transaction_data?.qr_code_base64;
       pagamentoId = response?.id;
+
+      if (!qrCode) {
+        throw new Error('A API do Mercado Pago não retornou o código Pix.');
+      }
     } catch (apiErr) {
-      console.warn('[Mercado Pago Fallback] Gerando Pix simulado para testes:', apiErr.message);
-      pagamentoId = 'TEST_PAY_' + Date.now();
-      qrCode = `00020126580014br.gov.bcb.pix013612345678-1234-1234-1234-1234567890ab5204000053039865802BR5913LL TECH INFO6009MANAUS62070503***63041D3A`;
-      qrCodeBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+      console.error('[Mercado Pago Erro Real]:', apiErr.message);
+      return res.status(500).json({ error: 'Erro ao gerar Pix no Mercado Pago: ' + apiErr.message });
     }
 
     await db.query(
@@ -305,11 +322,8 @@ app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
       ['AGUARDANDO PAGAMENTO', valor, String(pagamentoId), id]
     );
 
-    db.query('SELECT nome, telefone FROM usuarios WHERE id = \$1', [req.usuario.id])
-      .then((userRes) => {
-        const cliente = userRes.rows[0];
-        if (cliente && cliente.telefone) {
-          const msgPix = `🖥️ *LL TECH INFO - COBRANÇA PIX*
+    if (cliente && cliente.telefone) {
+      const msgPix = `🖥️ *LL TECH INFO - COBRANÇA PIX*
 ----------------------------------------
 Olá, *${cliente.nome}*!
 
@@ -320,10 +334,8 @@ Cobrança gerada para o Chamado *#${chamado.id.substring(0, 8)}*.
 ${qrCode}
 
 Efetue o pagamento para darmos seguimento ao atendimento.`;
-          enviarNotificacaoWhatsApp(cliente.telefone, msgPix);
-        }
-      })
-      .catch((e) => console.error('Erro na consulta de telefone:', e));
+      enviarNotificacaoWhatsApp(cliente.telefone, msgPix);
+    }
 
     return res.json({
       mensagem: 'Cobrança Pix gerada com sucesso!',
