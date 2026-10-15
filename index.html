@@ -12,81 +12,73 @@ async function carregarChamados() {
             return;
           }
 
-          listaDiv.innerHTML = chamados.map((c) => {
+          let htmlContent = '';
+          for (let i = 0; i < chamados.length; i++) {
+            const c = chamados[i];
             const statusClass = c.status ? c.status.replace(/\s+/g, '_') : 'ABERTO';
-            return `
-            <div class="card" id="card-${c.id}">
-              <div style="display: flex; justify-content: space-between; align-items: start;">
-                <h4 id="titulo-${c.id}">${c.titulo}</h4>
-                <span class="badge badge-${statusClass}">${c.status}</span>
-              </div>
-              <p id="desc-${c.id}" style="margin-top: 8px; color: #475569;">${c.descricao}</p>
-              <small style="color: #94a3b8; display: block; margin-top: 8px;">Criado em: ${new Date(c.criado_em).toLocaleString('pt-BR')}</small>
-              
-              ${c.valor && Number(c.valor) > 0 ? `<small style="color: #0284c7; display: block; font-weight: bold; margin-top: 4px;">Valor: R\$ \${Number(c.valor).toFixed(2)}</small>` : ''}
-
-              <div id="pix-container-${c.id}" class="pix-box hidden">
-                <p style="font-size: 12px; font-weight: bold; color: #c2410c; margin-bottom: 5px;">Escaneie o QR Code ou copie o Pix:</p>
-                <img id="pix-img-${c.id}" src="" alt="QR Code Pix" style="max-width: 150px; display: block; margin: 0 auto 8px auto;" />
-                <textarea id="pix-copia-${c.id}" rows="2" style="font-size: 11px; resize: none;" readonly></textarea>
-                <button type="button" onclick="window.copiarPix('${c.id}')" style="margin-top: 6px; background-color: #f97316; font-size: 12px; padding: 6px;">Copiar Código Pix</button>
-              </div>
-              
-              ${
-                (usuario.tipo === 'CLIENTE' || usuario.tipo === 'cliente') && c.status === 'ABERTO'
-                  ? `
-                <div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 8px; display: flex; gap: 5px;">
-                  <button type="button" class="btn-toggle-edicao" data-id="\${c.id}" style="background-color: #f59e0b; width: auto; padding: 5px 12px; font-size: 12px; color: white; border: none; border-radius: 6px; cursor: pointer;">Editar</button>
+            
+            htmlContent += `
+              <div class="card" id="card-${c.id}">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                  <h4 id="titulo-${c.id}">${c.titulo}</h4>
+                  <span class="badge badge-${statusClass}">${c.status}</span>
                 </div>
-                <form id="form-edit-${c.id}" class="hidden" style="margin-top: 10px;" onsubmit="window.salvarEdicao(event, '${c.id}')">
-                  <input type="text" id="input-edit-titulo-${c.id}" value="${c.titulo.replace(/"/g, '&quot;')}" style="margin-bottom: 5px;" required>
-                  <textarea id="input-edit-desc-${c.id}" rows="2" style="margin-bottom: 5px;" required>${c.descricao}</textarea>
-                  <div style="display: flex; gap: 5px;">
-                    <button type="submit" style="background-color: #10b981; width: auto; padding: 5px 12px; font-size: 12px;">Guardar</button>
-                    <button type="button" class="btn-toggle-edicao" data-id="\${c.id}" style="background-color: #64748b; width: auto; padding: 5px 12px; font-size: 12px;">Cancelar</button>
+                <p id="desc-${c.id}" style="margin-top: 8px; color: #475569;">${c.descricao}</p>
+                <small style="color: #94a3b8; display: block; margin-top: 8px;">Criado em: ${new Date(c.criado_em).toLocaleString('pt-BR')}</small>
+                
+                ${c.valor && Number(c.valor) > 0 ? `<small style="color: #0284c7; display: block; font-weight: bold; margin-top: 4px;">Valor: R\$ \${Number(c.valor).toFixed(2)}</small>` : ''}
+
+                <div id="pix-container-${c.id}" class="pix-box hidden">
+                  <p style="font-size: 12px; font-weight: bold; color: #c2410c; margin-bottom: 5px;">Escaneie o QR Code ou copie o Pix:</p>
+                  <img id="pix-img-${c.id}" src="" alt="QR Code Pix" style="max-width: 150px; display: block; margin: 0 auto 8px auto;" />
+                  <textarea id="pix-copia-${c.id}" rows="2" style="font-size: 11px; resize: none;" readonly></textarea>
+                  <button type="button" onclick="window.copiarPix('${c.id}')" style="margin-top: 6px; background-color: #f97316; font-size: 12px; padding: 6px;">Copiar Código Pix</button>
+                </div>
+                
+                ${(usuario.tipo === 'CLIENTE' || usuario.tipo === 'cliente') && c.status === 'ABERTO' ? `
+                  <div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 8px; display: flex; gap: 5px;">
+                    <button type="button" class="btn-toggle-edicao" data-id="\${c.id}" style="background-color: #f59e0b; width: auto; padding: 5px 12px; font-size: 12px; color: white; border: none; border-radius: 6px; cursor: pointer;">Editar</button>
                   </div>
-                </form>
-              `
-                  : ''
-              }
-
-              ${
-                (usuario.tipo === 'CLIENTE' || usuario.tipo === 'cliente') && (c.status === 'AGUARDANDO_PAGAMENTO' || c.status === 'AGUARDANDO PAGAMENTO') && (!c.pagamento_id)
-                  ? `
-                <div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 8px;">
-                  <button type="button" onclick="window.gerarPix('${c.id}',${c.valor || 0.03})" style="background-color: #f97316; font-size: 12px; padding: 8px;">Pagar com Pix</button>
-                </div>
-              `
-                  : ''
-              }
-
-              ${
-                usuario.tipo !== 'CLIENTE' && usuario.tipo !== 'cliente'
-                  ? `
-                <div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 8px;">
-                  <div style="display: flex; gap: 8px; align-items: flex-end; margin-bottom: 6px;">
-                    <div style="flex: 1;">
-                      <label style="font-size: 12px;">Status:</label>
-                      <select id="select-status-\${c.id}" style="margin-top: 4px;">
-                        <option value="ABERTO" \${c.status === 'ABERTO' ? 'selected' : ''}>ABERTO</option>
-                        <option value="AGUARDANDO PAGAMENTO" \${c.status === 'AGUARDANDO PAGAMENTO' || c.status === 'AGUARDANDO_PAGAMENTO' ? 'selected' : ''}>AGUARDANDO PAGAMENTO</option>
-                        <option value="EM ATENDIMENTO" \${c.status === 'EM ATENDIMENTO' || c.status === 'EM_ATENDIMENTO' ? 'selected' : ''}>EM ATENDIMENTO</option>
-                        <option value="CONCLUIDO" \${c.status === 'CONCLUIDO' ? 'selected' : ''}>CONCLUIDO</option>
-                      </select>
+                  <form id="form-edit-${c.id}" class="hidden" style="margin-top: 10px;" onsubmit="window.salvarEdicao(event, '${c.id}')">
+                    <input type="text" id="input-edit-titulo-${c.id}" value="${c.titulo.replace(/"/g, '&quot;')}" style="margin-bottom: 5px;" required>
+                    <textarea id="input-edit-desc-${c.id}" rows="2" style="margin-bottom: 5px;" required>${c.descricao}</textarea>
+                    <div style="display: flex; gap: 5px;">
+                      <button type="submit" style="background-color: #10b981; width: auto; padding: 5px 12px; font-size: 12px;">Guardar</button>
+                      <button type="button" class="btn-toggle-edicao" data-id="\${c.id}" style="background-color: #64748b; width: auto; padding: 5px 12px; font-size: 12px;">Cancelar</button>
                     </div>
-                    <div style="width: 90px;">
-                      <label style="font-size: 12px;">Valor (R\$):</label>
-                      <input type="number" step="0.01" id="input-val-${c.id}" value="${c.valor || '0.03'}" style="margin-top: 4px; padding: 8px;" />
-                    </div>
+                  </form>
+                ` : ''}
+
+                ${(usuario.tipo === 'CLIENTE' || usuario.tipo === 'cliente') && (c.status === 'AGUARDANDO_PAGAMENTO' || c.status === 'AGUARDANDO PAGAMENTO') && (!c.pagamento_id) ? `
+                  <div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 8px;">
+                    <button type="button" onclick="window.gerarPix('${c.id}',${c.valor || 0.03})" style="background-color: #f97316; font-size: 12px; padding: 8px;">Pagar com Pix</button>
                   </div>
-                  <button type="button" onclick="window.salvarDadosTecnico('\${c.id}')" style="background-color: #10b981; font-size: 12px; padding: 6px;">Guardar Alterações</button>
-                </div>
-              `
-                  : ''
-              }
-            </div>
-          `;
-          }).join('');
+                ` : ''}
+
+                ${usuario.tipo !== 'CLIENTE' && usuario.tipo !== 'cliente' ? `
+                  <div style="margin-top: 10px; border-top: 1px solid #cbd5e1; padding-top: 8px;">
+                    <div style="display: flex; gap: 8px; align-items: flex-end; margin-bottom: 6px;">
+                      <div style="flex: 1;">
+                        <label style="font-size: 12px;">Status:</label>
+                        <select id="select-status-\${c.id}" style="margin-top: 4px;">
+                          <option value="ABERTO" \${c.status === 'ABERTO' ? 'selected' : ''}>ABERTO</option>
+                          <option value="AGUARDANDO PAGAMENTO" \${c.status === 'AGUARDANDO PAGAMENTO' || c.status === 'AGUARDANDO_PAGAMENTO' ? 'selected' : ''}>AGUARDANDO PAGAMENTO</option>
+                          <option value="EM ATENDIMENTO" \${c.status === 'EM ATENDIMENTO' || c.status === 'EM_ATENDIMENTO' ? 'selected' : ''}>EM ATENDIMENTO</option>
+                          <option value="CONCLUIDO" \${c.status === 'CONCLUIDO' ? 'selected' : ''}>CONCLUIDO</option>
+                        </select>
+                      </div>
+                      <div style="width: 90px;">
+                        <label style="font-size: 12px;">Valor (R\$):</label>
+                        <input type="number" step="0.01" id="input-val-${c.id}" value="${c.valor || '0.03'}" style="margin-top: 4px; padding: 8px;" />
+                      </div>
+                    </div>
+                    <button type="button" onclick="window.salvarDadosTecnico('\${c.id}')" style="background-color: #10b981; font-size: 12px; padding: 6px;">Guardar Alterações</button>
+                  </div>
+                ` : ''}
+              </div>
+            `;
+          }
+          listaDiv.innerHTML = htmlContent;
         } catch (err) {
           listaDiv.innerHTML = `<div class="msg msg-error">${err.message}</div>`;
         }
