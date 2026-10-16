@@ -203,31 +203,38 @@ app.get('/api/chamados', autenticarToken, async (req, res) => {
 });
 
 // ==========================================
-// ROTA: Criar Chamado
+// ROTA: Criar Chamado com Suporte a Foto da Etiqueta
 // ==========================================
 app.post('/api/chamados', autenticarToken, async (req, res) => {
   try {
-    const { titulo, descricao } = req.body;
+    const { titulo, descricao, etiqueta_foto } = req.body;
     if (!titulo || !descricao) {
       return res.status(400).json({ error: 'Título e descrição são obrigatórios.' });
+    }
+
+    // Garante que a coluna etiqueta_foto existe na tabela de chamados
+    try {
+      await db.query('ALTER TABLE chamados ADD COLUMN IF NOT EXISTS etiqueta_foto TEXT;');
+    } catch (e) {
+      // Ignora caso já exista
     }
 
     let result;
     try {
       result = await db.query(
-        'INSERT INTO chamados (titulo, descricao, usuario_id, status) VALUES (\$1, \$2, \$3, \$4) RETURNING *',
-        [titulo, descricao, req.usuario.id, 'ABERTO']
+        'INSERT INTO chamados (titulo, descricao, usuario_id, status, etiqueta_foto) VALUES (\$1, \$2, \$3, \$4, \$5) RETURNING *',
+        [titulo, descricao, req.usuario.id, 'ABERTO', etiqueta_foto || null]
       );
     } catch (err1) {
       result = await db.query(
-        'INSERT INTO chamados (titulo, descricao, cliente_id, status) VALUES (\$1, \$2, \$3, \$4) RETURNING *',
-        [titulo, descricao, req.usuario.id, 'ABERTO']
+        'INSERT INTO chamados (titulo, descricao, cliente_id, status, etiqueta_foto) VALUES (\$1, \$2, \$3, \$4, \$5) RETURNING *',
+        [titulo, descricao, req.usuario.id, 'ABERTO', etiqueta_foto || null]
       );
     }
 
     const chamadoId = result.rows[0].id;
 
-    // Disparar Notificação WhatsApp (Padrão Executivo 5S)
+    // Disparar Notificação WhatsApp (LL TECH INFO)
     const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = \$1', [req.usuario.id]);
     const cliente = userRes.rows[0];
     if (cliente && cliente.telefone) {
@@ -235,13 +242,13 @@ app.post('/api/chamados', autenticarToken, async (req, res) => {
 ----------------------------------------
 Olá, *${cliente.nome}*!
 
-O seu chamado foi registrado com sucesso em nosso sistema.
-
+O seu chamado foi registrado com sucesso.
 📌 *Chamado:* #${chamadoId.substring(0, 8)}
 📝 *Assunto:* ${titulo}
-🟢 *Status:* ABERTO (Aguardando análise da equipa)
+📸 *Etiqueta do Equipamento:* ${etiqueta_foto ? 'Anexada' : 'Não anexada'}
+🟢 *Status:* ABERTO
 
-Acompanhe a evolução do seu atendimento pelo portal.`;
+Acompanhe a evolução pelo portal.`;
 
       enviarNotificacaoWhatsApp(cliente.telefone, msgAbertura);
     }
