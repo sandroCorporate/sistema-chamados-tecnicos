@@ -437,6 +437,25 @@
         }
       });
 
+      // Função auxiliar para verificar pagamentos pendentes no Mercado Pago
+      async function verificarPagamentosPendentes(chamados) {
+        for (let c of chamados) {
+          if ((c.status === 'AGUARDANDO PAGAMENTO' || c.status === 'AGUARDANDO_PAGAMENTO') && c.pagamento_id) {
+            try {
+              const res = await fetch('/api/chamados/' + c.id + '/verificar-pagamento', {
+                headers: { Authorization: 'Bearer ' + token }
+              });
+              const data = await res.json();
+              if (data.pago) {
+                c.status = 'EM ATENDIMENTO'; // Atualiza localmente se aprovado no MP
+              }
+            } catch (err) {
+              console.error('Erro ao verificar pagamento do chamado ' + c.id, err);
+            }
+          }
+        }
+      }
+
       async function carregarChamados() {
         const listaDiv = document.getElementById('lista-chamados');
         try {
@@ -445,6 +464,9 @@
           });
           const chamados = await res.json();
           if (!res.ok) throw new Error(chamados.error || 'Erro ao buscar chamados.');
+
+          // Verifica ativamente se algum chamado com pagamento pendente já foi pago no Mercado Pago
+          await verificarPagamentosPendentes(chamados);
 
           if (chamados.length === 0) {
             listaDiv.innerHTML = '<p class="text-slate-400 text-sm">Nenhum chamado encontrado.</p>';
