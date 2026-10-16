@@ -313,7 +313,17 @@
 
     </div>
 
-    <!-- JAVASCRIPT DO SISTEMA (PRESERVADO COM TODAS AS REGRAS E APIS) -->
+    <!-- Modal para Ampliar Foto da Etiqueta (Posicionado corretamente fora do script) -->
+    <div id="modal-zoom" class="hidden fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4">
+      <div class="relative max-w-full max-h-full flex flex-col items-center">
+        <button type="button" onclick="fecharZoomEtiqueta()" class="mb-3 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-lg shadow-lg cursor-pointer">
+          <i class="fa-solid fa-xmark mr-1"></i> Fechar Imagem
+        </button>
+        <img id="img-zoom-preview" src="" alt="Etiqueta Ampliada" class="max-w-full max-h-[82vh] rounded-lg border border-slate-700 object-contain shadow-2xl" />
+      </div>
+    </div>
+
+    <!-- JAVASCRIPT DO SISTEMA -->
     <script>
       let token = localStorage.getItem('token');
       let usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
@@ -468,11 +478,11 @@
             htmlContent += '</div>';
             htmlContent += '<p id="desc-' + c.id + '" style="margin-top: 8px; color: #cbd5e1; font-size: 13px;">' + c.descricao + '</p>';
             
-            // Se houver foto da etiqueta, exibe a miniatura diretamente no corpo do cartão do chamado
+            // Se houver foto da etiqueta, exibe a miniatura com suporte a clique para zoom
             if (c.etiqueta_foto) {
               htmlContent += '<div style="margin-top: 10px; background: #0f172a; padding: 8px; border-radius: 6px; border: 1px solid #334155;">';
-              htmlContent += '<p style="font-size: 11px; color: #f59e0b; font-weight: bold; margin-bottom: 6px;"><i class="fa-solid fa-image mr-1"></i> Etiqueta do Equipamento:</p>';
-              htmlContent += '<img src="' + c.etiqueta_foto + '" alt="Foto da Etiqueta" style="max-width: 100%; max-height: 220px; border-radius: 4px; display: block; margin: 0 auto; object-fit: contain;" />';
+              htmlContent += '<p style="font-size: 11px; color: #f59e0b; font-weight: bold; margin-bottom: 6px;"><i class="fa-solid fa-image mr-1"></i> Etiqueta do Equipamento (Clique para ampliar):</p>';
+              htmlContent += '<img src="' + c.etiqueta_foto + '" alt="Foto da Etiqueta" onclick="abrirZoomEtiqueta(\'' + c.etiqueta_foto + '\')" style="max-width: 100%; max-height: 220px; border-radius: 4px; display: block; margin: 0 auto; object-fit: contain; cursor: pointer;" title="Clique para ver em tamanho ampliado" />';
               htmlContent += '</div>';
             }
 
@@ -642,6 +652,25 @@
         showLogin();
       });
 
+      // Funções para gerir o Zoom / Modal da Etiqueta
+      function abrirZoomEtiqueta(base64Str) {
+        const modal = document.getElementById('modal-zoom');
+        const imgPreview = document.getElementById('img-zoom-preview');
+        if (modal && imgPreview) {
+          imgPreview.src = base64Str;
+          modal.classList.remove('hidden');
+        }
+      }
+
+      function fecharZoomEtiqueta() {
+        const modal = document.getElementById('modal-zoom');
+        const imgPreview = document.getElementById('img-zoom-preview');
+        if (modal && imgPreview) {
+          modal.classList.add('hidden');
+          imgPreview.src = '';
+        }
+      }
+
       // Função auxiliar para converter o ficheiro de imagem em Base64
       function converterArquivoParaBase64(file) {
         return new Promise((resolve, reject) => {
@@ -685,15 +714,6 @@
           chamadoMsg.innerHTML = '<div class="msg msg-error">' + err.message + '</div>';
         }
       });
-    <!-- Modal para Ampliar Foto da Etiqueta -->
-    <div id="modal-zoom" class="hidden fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4">
-      <div class="relative max-w-full max-h-full flex flex-col items-center">
-        <button type="button" onclick="fecharZoomEtiqueta()" class="mb-3 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-lg shadow-lg">
-          <i class="fa-solid fa-xmark mr-1"></i> Fechar Imagem
-        </button>
-        <img id="img-zoom-preview" src="" alt="Etiqueta Ampliada" class="max-w-full max-h-[82vh] rounded-lg border border-slate-700 object-contain shadow-2xl" />
-      </div>
-    </div>
     </script>
   </body>
 </html>
