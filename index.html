@@ -294,6 +294,11 @@
               <label>Descrição</label>
               <textarea id="chamado-descricao" rows="3" required placeholder="Descreva detalhadamente o problema..."></textarea>
             </div>
+            <div class="form-group">
+              <label>Foto da Etiqueta do Equipamento (S/N ou P/N)</label>
+              <input type="file" id="chamado-etiqueta-foto" accept="image/*" capture="environment" />
+              <small style="color: #64748b; font-size: 11px;">Tire uma foto direta com o telemóvel ou carregue a imagem da etiqueta.</small>
+            </div>
             <button type="submit" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-sm">
               Enviar Chamado
             </button>
@@ -652,6 +657,51 @@
         usuario = null;
         showLogin();
       });
+
+      // Função auxiliar para converter o ficheiro de imagem em Base64
+      function converterArquivoParaBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = error => reject(error);
+        });
+      }
+
+      // Criar Chamado com Captura/Upload da Etiqueta
+      document.getElementById('form-chamado').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        chamadoMsg.innerHTML = '';
+        const titulo = document.getElementById('chamado-titulo').value;
+        const descricao = document.getElementById('chamado-descricao').value;
+        const inputFile = document.getElementById('chamado-etiqueta-foto');
+
+        let etiquetaBase64 = null;
+        if (inputFile.files && inputFile.files[0]) {
+          try {
+            etiquetaBase64 = await converterArquivoParaBase64(inputFile.files[0]);
+          } catch (err) {
+            console.error('Erro ao processar imagem da etiqueta:', err);
+          }
+        }
+
+        try {
+          const res = await fetch('/api/chamados', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+            body: JSON.stringify({ titulo, descricao, etiqueta_foto: etiquetaBase64 }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Erro ao criar chamado.');
+
+          document.getElementById('form-chamado').reset();
+          chamadoMsg.innerHTML = '<div class="msg msg-success">Chamado aberto com sucesso com a etiqueta anexada!</div>';
+          carregarChamados();
+        } catch (err) {
+          chamadoMsg.innerHTML = '<div class="msg msg-error">' + err.message + '</div>';
+        }
+      });
+      
     </script>
   </body>
 </html>
