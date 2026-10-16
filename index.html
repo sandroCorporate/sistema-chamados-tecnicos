@@ -685,7 +685,15 @@
           chamadoMsg.innerHTML = '<div class="msg msg-error">' + err.message + '</div>';
         }
       });
-      
+    <!-- Modal para Ampliar Foto da Etiqueta -->
+    <div id="modal-zoom" class="hidden fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4">
+      <div class="relative max-w-full max-h-full flex flex-col items-center">
+        <button type="button" onclick="fecharZoomEtiqueta()" class="mb-3 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-lg shadow-lg">
+          <i class="fa-solid fa-xmark mr-1"></i> Fechar Imagem
+        </button>
+        <img id="img-zoom-preview" src="" alt="Etiqueta Ampliada" class="max-w-full max-h-[82vh] rounded-lg border border-slate-700 object-contain shadow-2xl" />
+      </div>
+    </div>
     </script>
   </body>
 </html>
