@@ -468,10 +468,11 @@
             htmlContent += '</div>';
             htmlContent += '<p id="desc-' + c.id + '" style="margin-top: 8px; color: #cbd5e1; font-size: 13px;">' + c.descricao + '</p>';
             
-            // Se houver foto da etiqueta, exibe o link direto para o técnico ou utilizador visualizar
+            // Se houver foto da etiqueta, exibe a miniatura diretamente no corpo do cartão do chamado
             if (c.etiqueta_foto) {
-              htmlContent += '<div style="margin-top: 8px;">';
-              htmlContent += '<a href="' + c.etiqueta_foto + '" target="_blank" style="font-size: 11px; color: #f59e0b; text-decoration: underline;"><i class="fa-solid fa-image mr-1"></i> Ver Foto da Etiqueta / Serial</a>';
+              htmlContent += '<div style="margin-top: 10px; background: #0f172a; padding: 8px; border-radius: 6px; border: 1px solid #334155;">';
+              htmlContent += '<p style="font-size: 11px; color: #f59e0b; font-weight: bold; margin-bottom: 6px;"><i class="fa-solid fa-image mr-1"></i> Etiqueta do Equipamento:</p>';
+              htmlContent += '<img src="' + c.etiqueta_foto + '" alt="Foto da Etiqueta" style="max-width: 100%; max-height: 220px; border-radius: 4px; display: block; margin: 0 auto; object-fit: contain;" />';
               htmlContent += '</div>';
             }
 
