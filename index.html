@@ -417,31 +417,6 @@
         }
       });
 
-      // Criar Chamado
-      document.getElementById('form-chamado').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        chamadoMsg.innerHTML = '';
-        const titulo = document.getElementById('chamado-titulo').value;
-        const descricao = document.getElementById('chamado-descricao').value;
-
-        try {
-          const res = await fetch('/api/chamados', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-            body: JSON.stringify({ titulo, descricao }),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Erro ao criar chamado.');
-
-          document.getElementById('chamado-titulo').value = '';
-          document.getElementById('chamado-descricao').value = '';
-          chamadoMsg.innerHTML = '<div class="msg msg-success">Chamado aberto com sucesso!</div>';
-          carregarChamados();
-        } catch (err) {
-          chamadoMsg.innerHTML = '<div class="msg msg-error">' + err.message + '</div>';
-        }
-      });
-
       // Função auxiliar para verificar pagamentos pendentes no Mercado Pago
       async function verificarPagamentosPendentes(chamados) {
         for (let c of chamados) {
@@ -492,6 +467,14 @@
             htmlContent += '<span class="badge badge-' + statusClass + '">' + c.status + '</span>';
             htmlContent += '</div>';
             htmlContent += '<p id="desc-' + c.id + '" style="margin-top: 8px; color: #cbd5e1; font-size: 13px;">' + c.descricao + '</p>';
+            
+            // Se houver foto da etiqueta, exibe o link direto para o técnico ou utilizador visualizar
+            if (c.etiqueta_foto) {
+              htmlContent += '<div style="margin-top: 8px;">';
+              htmlContent += '<a href="' + c.etiqueta_foto + '" target="_blank" style="font-size: 11px; color: #f59e0b; text-decoration: underline;"><i class="fa-solid fa-image mr-1"></i> Ver Foto da Etiqueta / Serial</a>';
+              htmlContent += '</div>';
+            }
+
             htmlContent += '<small style="color: #64748b; display: block; margin-top: 8px; font-size: 11px;">Criado em: ' + dataCriacao + '</small>';
 
             if (valorNum > 0) {
