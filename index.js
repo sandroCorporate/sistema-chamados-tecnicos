@@ -19,7 +19,8 @@ const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN || MP_TOKEN_REAL,
 });
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Servir ficheiros estáticos (para disponibilizar o logo.png)
 app.use(express.static('public'));
