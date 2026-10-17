@@ -1,15 +1,12 @@
-import { makeWASocket, DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
+import { makeWASocket, DisconnectReason, fetchLatestBaileysVersion, BufferJSON } from '@whiskeysockets/baileys';
 import dotenv from 'dotenv';
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from './db.js';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
-import * as baileysPkg from '@whiskeysockets/baileys';
-const makeWASocket = baileysPkg.default.default || baileysPkg.default || baileysPkg.makeWASocket;
-const DisconnectReason = baileysPkg.DisconnectReason;
-const BufferJSON = baileysPkg.BufferJSON;
 import pino from 'pino';
+import qrcode from 'qrcode-terminal';
 
 dotenv.config();
 
