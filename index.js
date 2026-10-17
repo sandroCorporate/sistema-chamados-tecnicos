@@ -4,11 +4,10 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from './db.js';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
-import baileys from '@whiskeysockets/baileys';
-const makeWASocket = baileys.default || baileys.makeWASocket;
-const DisconnectReason = baileys.DisconnectReason;
-const initAuthState = baileys.initAuthState || baileys.initAuthCreds;
-const BufferJSON = baileys.BufferJSON;
+import * as baileysPkg from '@whiskeysockets/baileys';
+const makeWASocket = baileysPkg.default.default || baileysPkg.default || baileysPkg.makeWASocket;
+const DisconnectReason = baileysPkg.DisconnectReason;
+const BufferJSON = baileysPkg.BufferJSON;
 import pino from 'pino';
 
 dotenv.config();
