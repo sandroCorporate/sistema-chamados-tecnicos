@@ -9,6 +9,7 @@ const makeWASocket = baileysPkg.default.default || baileysPkg.default || baileys
 const DisconnectReason = baileysPkg.DisconnectReason;
 const BufferJSON = baileysPkg.BufferJSON;
 import pino from 'pino';
+import qrcode from 'qrcode-terminal';
 
 dotenv.config();
 
