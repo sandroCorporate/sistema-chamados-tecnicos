@@ -15,7 +15,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
-    "mercadopago": "^3.6.1"
+    "mercadopago": "^3.6.1",
     "@whiskeysockets/baileys": "^6.7.8",
     "qrcode-terminal": "^0.12.0",
   }
