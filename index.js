@@ -123,16 +123,25 @@ async function iniciarWhatsApp() {
   try {
     const { state, saveCreds } = await usePostgresAuthState(db);
     
+    // Removido o printQRInTerminal obsoleto
     sockWA = makeWASocket({
       auth: state,
-      printQRInTerminal: true,
       logger: pino({ level: 'silent' })
     });
 
     sockWA.ev.on('creds.update', saveCreds);
 
     sockWA.ev.on('connection.update', (update) => {
-      const { connection, lastDisconnect } = update;
+      const { connection, lastDisconnect, qr } = update;
+
+      // Se o Baileys gerar um novo QR Code, exibe-o nos logs
+      if (qr) {
+        console.log('[WhatsApp] Novo QR Code gerado. Utilize a aplicação para ler.');
+        // Pode importar e usar o qrcode-terminal se desejar desenhar no terminal, 
+        // ou visualizar a string do QR Code:
+        console.log(qr);
+      }
+
       if (connection === 'close') {
         const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
         console.log('[WhatsApp] Conexão fechada. A tentar reconectar...', shouldReconnect);
@@ -147,7 +156,6 @@ async function iniciarWhatsApp() {
     console.error('[WhatsApp Init Error]:', err.message);
   }
 }
-
 // ==========================================
 // FUNÇÃO AUXILIAR: Envio de WhatsApp (Baileys)
 // ==========================================
