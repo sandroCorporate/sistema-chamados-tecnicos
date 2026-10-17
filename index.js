@@ -1,4 +1,4 @@
-import { makeWASocket, DisconnectReason, fetchLatestBaileysVersion, BufferJSON } from '@whiskeysockets/baileys';
+import baileysPkg from '@whiskeysockets/baileys';
 import dotenv from 'dotenv';
 import express from 'express';
 import bcrypt from 'bcryptjs';
@@ -7,6 +7,8 @@ import db from './db.js';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import pino from 'pino';
 import qrcode from 'qrcode-terminal';
+
+const { makeWASocket, DisconnectReason, fetchLatestBaileysVersion } = baileysPkg;
 
 dotenv.config();
 
