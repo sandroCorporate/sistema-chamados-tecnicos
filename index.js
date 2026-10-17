@@ -1,3 +1,4 @@
+import { makeWASocket, DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
 import dotenv from 'dotenv';
 import express from 'express';
 import bcrypt from 'bcryptjs';
@@ -119,15 +120,20 @@ async function usePostgresAuthState(dbClient) {
 // ==========================================
 let sockWA = null;
 
+import { makeWASocket, DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
+
 async function iniciarWhatsApp() {
   try {
     const { state, saveCreds } = await usePostgresAuthState(db);
+    const { version, isLatest } = await fetchLatestBaileysVersion();
+    console.log(`[WhatsApp] A usar Baileys v${version.join('.')}`);
 
     sockWA = makeWASocket({
+      version,
       auth: state,
       logger: pino({ level: 'silent' }),
-      browser: ['LL Tech Info', 'Chrome', '105.0.0.0'],
-      syncFullHistory: false
+      browser: ['LL Tech Info', 'Chrome', '1.0.0'],
+      generateHighQualityLinkPreview: true
     });
 
     sockWA.ev.on('creds.update', saveCreds);
@@ -135,34 +141,37 @@ async function iniciarWhatsApp() {
     sockWA.ev.on('connection.update', (update) => {
       const { connection, lastDisconnect, qr } = update;
 
-      // Se houver QR code, desenha-o obrigatoriamente nos logs
+      // Imprime o QR Code sempre que recebido
       if (qr) {
         console.log('\n==================================================');
-        console.log('[WhatsApp] LEIA ESTE QR CODE COM O TELEMÓVEL:');
+        console.log('[WhatsApp] ESCANEIE ESTE QR CODE COM O SEU TELEMÓVEL:');
         qrcode.generate(qr, { small: true });
         console.log('==================================================\n');
       }
 
-      if (connection === 'close') {
+      if (connection === 'open') {
+        console.log('[WhatsApp] Conectado com sucesso ao WhatsApp da LL TECH INFO!');
+      } else if (connection === 'close') {
         const statusCode = lastDisconnect?.error?.output?.statusCode;
-        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-        
-        console.log(`[WhatsApp] Conexão fechada. A reconectar em 5 segundos... (Status: ${statusCode || 'novo'})`);
+        const loggedOut = statusCode === DisconnectReason.loggedOut;
 
-        if (shouldReconnect) {
+        console.log(`[WhatsApp] Conexão terminada. Status: ${statusCode || 'desconhecido'}.`);
+
+        // Se não foi deslogado intencionalmente, tenta reconectar após 10 segundos
+        if (!loggedOut) {
+          console.log('[WhatsApp] A agendar nova tentativa de ligação em 10 segundos...');
           setTimeout(() => {
             iniciarWhatsApp();
-          }, 5000);
+          }, 10000);
+        } else {
+          console.log('[WhatsApp] Sessão encerrada pelo utilizador. Limpe a tabela e reinicie.');
         }
-      } else if (connection === 'open') {
-        console.log('[WhatsApp] Conectado com sucesso ao WhatsApp da LL TECH INFO!');
       }
     });
   } catch (err) {
     console.error('[WhatsApp Init Error]:', err.message);
   }
 }
-
 // ==========================================
 // FUNÇÃO AUXILIAR: Envio de WhatsApp (Baileys)
 // ==========================================
