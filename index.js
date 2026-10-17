@@ -124,7 +124,7 @@ let sockWA = null;
 async function iniciarWhatsApp() {
   try {
     const { state, saveCreds } = await usePostgresAuthState(db);
-    const { version, isLatest } = await fetchLatestBaileysVersion();
+    const version = [2, 3000, 1015901307]; // Versão estável padrão do Baileys
     console.log(`[WhatsApp] A usar Baileys v${version.join('.')}`);
 
     sockWA = makeWASocket({
