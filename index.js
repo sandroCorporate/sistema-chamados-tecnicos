@@ -4,8 +4,11 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from './db.js';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
-import pkgBaileys from '@whiskeysockets/baileys';
-const { makeWASocket, DisconnectReason, initAuthCreds, BufferJSON } = pkgBaileys;
+import baileys from '@whiskeysockets/baileys';
+const makeWASocket = baileys.default || baileys.makeWASocket;
+const DisconnectReason = baileys.DisconnectReason;
+const initAuthState = baileys.initAuthState || baileys.initAuthCreds;
+const BufferJSON = baileys.BufferJSON;
 import pino from 'pino';
 
 dotenv.config();
@@ -60,7 +63,7 @@ async function usePostgresAuthState(dbClient) {
     } catch (error) {}
   };
 
-  const creds = (await readData('creds')) || initAuthCreds();
+   const creds = (await readData('creds')) || (initAuthState ? await initAuthState() : baileys.initAuthState());
 
   return {
     state: {
