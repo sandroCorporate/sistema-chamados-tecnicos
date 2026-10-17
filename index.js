@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from './db.js';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
+import pkgBaileys from '@whiskeysockets/baileys';
+const { makeWASocket, DisconnectReason, initAuthCreds, BufferJSON } = pkgBaileys;
+import pino from 'pino';
 
 dotenv.config();
 
@@ -14,24 +17,122 @@ const JWT_SECRET = process.env.JWT_SECRET || 'chave_secreta_super_segura';
 // Token real do Mercado Pago integrado
 const MP_TOKEN_REAL = 'APP_USR-5595843191696827-101213-f5e5271648f3f70353dbc57f81016599-332217735';
 
-// Inicializa o cliente do Mercado Pago
 const mpClient = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN || MP_TOKEN_REAL,
 });
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-
-// Servir ficheiros estáticos (para disponibilizar o logo.png)
 app.use(express.static('public'));
 
 // ==========================================
-// FUNÇÃO AUXILIAR: Envio de WhatsApp (LL TECH INFO - Padrão 5S)
+// ADAPTADOR DE AUTENTICAÇÃO BAILEYS NO POSTGRES (NEON)
+// ==========================================
+async function usePostgresAuthState(dbClient) {
+  await dbClient.query(`
+    CREATE TABLE IF NOT EXISTS whatsapp_auth (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    );
+  `);
+
+  const writeData = async (data, key) => {
+    const serialized = JSON.stringify(data, BufferJSON.replacer);
+    await dbClient.query(
+      `INSERT INTO whatsapp_auth (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      [key, serialized]
+    );
+  };
+
+  const readData = async (key) => {
+    try {
+      const { rows } = await dbClient.query('SELECT value FROM whatsapp_auth WHERE key = \$1', [key]);
+      if (rows.length === 0) return null;
+      return JSON.parse(rows[0].value, BufferJSON.reviver);
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const removeData = async (key) => {
+    try {
+      await dbClient.query('DELETE FROM whatsapp_auth WHERE key = \$1', [key]);
+    } catch (error) {}
+  };
+
+  const creds = (await readData('creds')) || initAuthCreds();
+
+  return {
+    state: {
+      creds,
+      keys: {
+        get: async (type, ids) => {
+          const data = {};
+          for (const id of ids) {
+            const value = await readData(`${type}-${id}`);
+            if (value) {
+              data[id] = value;
+            }
+          }
+          return data;
+        },
+        set: async (data) => {
+          for (const category of Object.keys(data)) {
+            for (const id of Object.keys(data[category])) {
+              const value = data[category][id];
+              const key = `${category}-${id}`;
+              if (value) {
+                await writeData(value, key);
+              } else {
+                await removeData(key);
+              }
+            }
+          }
+        }
+      }
+    },
+    saveCreds: () => writeData(state.creds, 'creds')
+  };
+}
+
+// ==========================================
+// CONFIGURAÇÃO DO WHATSAPP NATIVO (BAILEYS)
+// ==========================================
+let sockWA = null;
+
+async function iniciarWhatsApp() {
+  try {
+    const { state, saveCreds } = await usePostgresAuthState(db);
+    
+    sockWA = makeWASocket({
+      auth: state,
+      printQRInTerminal: true, // O QR Code aparecerá diretamente nos Logs do Render
+      logger: pino({ level: 'silent' })
+    });
+
+    sockWA.ev.on('creds.update', saveCreds);
+
+    sockWA.ev.on('connection.update', (update) => {
+      const { connection, lastDisconnect } = update;
+      if (connection === 'close') {
+        const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+        console.log('[WhatsApp] Conexão fechada. A tentar reconectar...', shouldReconnect);
+        if (shouldReconnect) {
+          iniciarWhatsApp();
+        }
+      } else if (connection === 'open') {
+        console.log('[WhatsApp] Conectado com sucesso ao WhatsApp da LL TECH INFO!');
+      }
+    });
+  } catch (err) {
+    console.error('[WhatsApp Init Error]:', err.message);
+  }
+}
+
+// ==========================================
+// FUNÇÃO AUXILIAR: Envio de WhatsApp (Baileys)
 // ==========================================
 async function enviarNotificacaoWhatsApp(telefone, mensagem) {
-  const waUrl = 'https://api.z-api.io/instances/3FA96A6E1C7E826EA6682AB027F8477F/token/B2F6CE0E3D44D70B123969D9/send-text';
-  const accountClientToken = 'Fdb54180c68fc4457802387d62cb97fb5S';
-
   if (!telefone || telefone.trim() === '') {
     console.log('[WhatsApp Skipped] Telefone não configurado.');
     return;
@@ -42,26 +143,17 @@ async function enviarNotificacaoWhatsApp(telefone, mensagem) {
     numApenasDigitos = '55' + numApenasDigitos;
   }
 
-  try {
-    const response = await fetch(waUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Client-Token': accountClientToken,
-      },
-      body: JSON.stringify({
-        phone: numApenasDigitos,
-        message: mensagem,
-      }),
-    });
+  const jid = `${numApenasDigitos}@s.whatsapp.net`;
 
-    const data = await response.json();
-    console.log(`[WhatsApp Sent] Resposta Z-API para ${numApenasDigitos}:`, data);
+  try {
+    if (!sockWA) {
+      console.log('[WhatsApp Error] Socket do Baileys ainda não inicializado.');
+      return;
+    }
+    await sockWA.sendMessage(jid, { text: mensagem });
+    console.log(`[WhatsApp Sent] Mensagem enviada para ${numApenasDigitos} com sucesso.`);
   } catch (error) {
-    console.error(
-      '[WhatsApp Error] Falha ao enviar notificação (ignorado):',
-      error.message
-    );
+    console.error('[WhatsApp Error] Falha ao enviar mensagem:', error.message);
   }
 }
 
@@ -93,7 +185,7 @@ app.get('/', (req, res) => {
 });
 
 // ==========================================
-// ROTA: Cadastro Público de Clientes (Corrigida)
+// ROTA: Cadastro Público de Clientes
 // ==========================================
 app.post('/api/registro', async (req, res) => {
   const { nome, email, telefone, documento, senha } = req.body;
@@ -212,12 +304,9 @@ app.post('/api/chamados', autenticarToken, async (req, res) => {
       return res.status(400).json({ error: 'Título e descrição são obrigatórios.' });
     }
 
-    // Garante que a coluna etiqueta_foto existe na tabela de chamados
     try {
       await db.query('ALTER TABLE chamados ADD COLUMN IF NOT EXISTS etiqueta_foto TEXT;');
-    } catch (e) {
-      // Ignora caso já exista
-    }
+    } catch (e) {}
 
     let result;
     try {
@@ -234,7 +323,6 @@ app.post('/api/chamados', autenticarToken, async (req, res) => {
 
     const chamadoId = result.rows[0].id;
 
-    // Disparar Notificação WhatsApp (LL TECH INFO)
     const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = \$1', [req.usuario.id]);
     const cliente = userRes.rows[0];
     if (cliente && cliente.telefone) {
@@ -264,7 +352,7 @@ Acompanhe a evolução pelo portal.`;
 });
 
 // ==========================================
-// ROTA: Gerar Pagamento Pix (Suporte a R\$ 0,03)
+// ROTA: Gerar Pagamento Pix
 // ==========================================
 app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
   try {
@@ -281,14 +369,12 @@ app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
     }
     const chamado = chamadoRes.rows[0];
 
-    // Busca os dados do usuário/cliente logado (incluindo documento e telefone)
     const userRes = await db.query('SELECT nome, email, telefone, documento FROM usuarios WHERE id = \$1', [req.usuario.id]);
     const cliente = userRes.rows[0] || {};
 
-    // Limpa o documento para enviar apenas números (exigido pelo Mercado Pago)
     let docLimpo = cliente.documento ? cliente.documento.replace(/\D/g, '') : '00000000000';
     if (docLimpo.length !== 11 && docLimpo.length !== 14) {
-      docLimpo = '12345678909'; // Fallback padrão caso o documento esteja incompleto
+      docLimpo = '12345678909';
     }
     const tipoDoc = docLimpo.length === 14 ? 'CNPJ' : 'CPF';
 
@@ -357,7 +443,7 @@ Efetue o pagamento para darmos seguimento ao atendimento.`;
 });
 
 // ==========================================
-// ROTA: Webhook Mercado Pago (Tratamento Robusto)
+// ROTA: Webhook Mercado Pago
 // ==========================================
 app.post('/api/webhook/mercadopago', async (req, res) => {
   try {
@@ -408,7 +494,7 @@ A nossa equipa técnica já iniciou o atendimento.`;
 });
 
 // ==========================================
-// ROTA AUXILIAR: Verificar Status do Pagamento (Checagem Direta)
+// ROTA AUXILIAR: Verificar Status do Pagamento
 // ==========================================
 app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, res) => {
   try {
@@ -438,7 +524,7 @@ app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, re
 });
 
 // ==========================================
-// ROTA: Atualizar Chamado (Status e Valor - Técnico)
+// ROTA: Atualizar Chamado (Técnico)
 // ==========================================
 app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
   try {
@@ -451,9 +537,7 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
 
     try {
       await db.query('ALTER TABLE chamados ADD COLUMN IF NOT EXISTS valor NUMERIC(10,2) DEFAULT 0.00;');
-    } catch (e) {
-      // Ignora se já existir
-    }
+    } catch (e) {}
 
     let query, params;
     if (valor !== undefined && status !== undefined) {
@@ -519,7 +603,7 @@ Aceda ao portal para efetuar o pagamento via Pix e prosseguir com o atendimento.
 });
 
 // ==========================================
-// ROTA: Atualizar Valor do Chamado (Técnico)
+// ROTA: Atualizar Valor do Chamado
 // ==========================================
 app.patch('/api/chamados/:id/valor', autenticarToken, async (req, res) => {
   try {
@@ -574,8 +658,9 @@ app.patch('/api/chamados/:id/editar', autenticarToken, async (req, res) => {
 });
 
 // ==========================================
-// INICIALIZAÇÃO DO SERVIDOR
+// INICIALIZAÇÃO DO SERVIDOR & WHATSAPP
 // ==========================================
 app.listen(PORT, () => {
   console.log(`Servidor LL TECH INFO rodando na porta ${PORT}`);
+  iniciarWhatsApp();
 });
