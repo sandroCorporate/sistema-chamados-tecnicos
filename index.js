@@ -133,22 +133,25 @@ async function iniciarWhatsApp() {
     sockWA.ev.on('creds.update', saveCreds);
 
     sockWA.ev.on('connection.update', (update) => {
-      const { connection, lastDisconnect, qr } = update;
+  const { connection, lastDisconnect, qr } = update;
 
-      // Se o Baileys gerar um novo QR Code, exibe-o nos logs
-      if (qr) {
-  qrcode.generate(qr, { small: true });
+  // Desenha o QR Code visualmente nos logs do Render
+  if (qr) {
+    console.log('[WhatsApp] Escaneie o QR Code abaixo com o telemóvel da assistência:');
+    qrcode.generate(qr, { small: true });
   }
-      if (connection === 'close') {
-        const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-        console.log('[WhatsApp] Conexão fechada. A tentar reconectar...', shouldReconnect);
-        if (shouldReconnect) {
-          iniciarWhatsApp();
-        }
-      } else if (connection === 'open') {
-        console.log('[WhatsApp] Conectado com sucesso ao WhatsApp da LL TECH INFO!');
-      }
-    });
+
+  if (connection === 'close') {
+    const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+    console.log('[WhatsApp] Conexão fechada. A tentar reconectar...', shouldReconnect);
+    if (shouldReconnect) {
+      iniciarWhatsApp();
+    }
+  } else if (connection === 'open') {
+    console.log('[WhatsApp] Conectado com sucesso ao WhatsApp da LL TECH INFO!');
+  }
+});
+    
   } catch (err) {
     console.error('[WhatsApp Init Error]:', err.message);
   }
