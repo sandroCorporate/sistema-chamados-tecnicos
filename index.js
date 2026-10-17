@@ -63,7 +63,26 @@ async function usePostgresAuthState(dbClient) {
     } catch (error) {}
   };
 
-   const creds = (await readData('creds')) || (initAuthState ? await initAuthState() : baileys.initAuthState());
+  // Utiliza o gestor de credenciais padrão do Baileys de forma segura
+  let creds;
+  const storedCreds = await readData('creds');
+  
+  if (storedCreds) {
+    creds = storedCreds;
+  } else {
+    // Se não existir, gera novas credenciais limpas compatíveis com a versão 6.x
+    creds = baileys.AuthenticationCreds ? baileys.AuthenticationCreds.init() : {
+      noiseKey: baileys.generateKeyPair ? baileys.generateKeyPair() : undefined,
+      signedIdentityKey: baileys.generateKeyPair ? baileys.generateKeyPair() : undefined,
+      signedPreKey: baileys.generateSignedPreKey ? baileys.generateSignedPreKey(null, 1) : undefined,
+      registrationId: Math.floor(Math.random() * 1000000),
+      advSecretKey: '',
+      processedHistoryMessages: [],
+      nextPreKeyId: 1,
+      firstUnuploadedPreKeyId: 1,
+      accountSettings: { unarchiveChats: false }
+    };
+  }
 
   return {
     state: {
@@ -97,7 +116,6 @@ async function usePostgresAuthState(dbClient) {
     saveCreds: () => writeData(state.creds, 'creds')
   };
 }
-
 // ==========================================
 // CONFIGURAÇÃO DO WHATSAPP NATIVO (BAILEYS)
 // ==========================================
