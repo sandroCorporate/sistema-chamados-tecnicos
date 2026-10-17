@@ -313,7 +313,7 @@
 
     </div>
 
-    <!-- Modal para Ampliar Foto da Etiqueta (Posicionado corretamente fora do script) -->
+    <!-- Modal para Ampliar Foto da Etiqueta -->
     <div id="modal-zoom" class="hidden fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4">
       <div class="relative max-w-full max-h-full flex flex-col items-center">
         <button type="button" onclick="fecharZoomEtiqueta()" class="mb-3 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-lg shadow-lg cursor-pointer">
@@ -364,7 +364,8 @@
         screenDashboard.classList.remove('hidden');
         document.getElementById('user-info').innerText = usuario.nome + ' (' + usuario.tipo + ') - ' + usuario.email;
 
-        if (usuario.tipo === 'CLIENTE' || usuario.tipo === 'cliente') {
+        const tipoUpper = String(usuario.tipo || '').toUpperCase();
+        if (tipoUpper === 'CLIENTE') {
           document.getElementById('section-novo-chamado').classList.remove('hidden');
         } else {
           document.getElementById('section-novo-chamado').classList.add('hidden');
@@ -437,7 +438,7 @@
               });
               const data = await res.json();
               if (data.pago) {
-                c.status = 'EM ATENDIMENTO'; // Atualiza localmente se aprovado no MP
+                c.status = 'EM ATENDIMENTO';
               }
             } catch (err) {
               console.error('Erro ao verificar pagamento do chamado ' + c.id, err);
@@ -455,7 +456,6 @@
           const chamados = await res.json();
           if (!res.ok) throw new Error(chamados.error || 'Erro ao buscar chamados.');
 
-          // Verifica ativamente se algum chamado com pagamento pendente já foi pago no Mercado Pago
           await verificarPagamentosPendentes(chamados);
 
           if (chamados.length === 0) {
@@ -469,7 +469,7 @@
             const statusClass = c.status ? c.status.replace(/\s+/g, '_') : 'ABERTO';
             const valorNum = c.valor ? Number(c.valor) : 0;
             const dataCriacao = new Date(c.criado_em).toLocaleString('pt-BR');
-            const isCliente = usuario.tipo === 'CLIENTE' || usuario.tipo === 'cliente';
+            const isCliente = String(usuario.tipo || '').toUpperCase() === 'CLIENTE';
 
             htmlContent += '<div class="card" id="card-' + c.id + '">';
             htmlContent += '<div style="display: flex; justify-content: space-between; align-items: start;">';
@@ -478,7 +478,6 @@
             htmlContent += '</div>';
             htmlContent += '<p id="desc-' + c.id + '" style="margin-top: 8px; color: #cbd5e1; font-size: 13px;">' + c.descricao + '</p>';
             
-            // Se houver foto da etiqueta, exibe a miniatura com suporte a clique para zoom
             if (c.etiqueta_foto) {
               htmlContent += '<div style="margin-top: 10px; background: #0f172a; padding: 8px; border-radius: 6px; border: 1px solid #334155;">';
               htmlContent += '<p style="font-size: 11px; color: #f59e0b; font-weight: bold; margin-bottom: 6px;"><i class="fa-solid fa-image mr-1"></i> Etiqueta do Equipamento (Clique para ampliar):</p>';
@@ -588,7 +587,7 @@
           if (!res.ok) throw new Error(data.error || 'Erro ao atualizar chamado.');
 
           alert('Alterações salvas com sucesso!');
-          carregarChamados();
+          await carregarChamados();
         } catch (err) {
           alert('Erro ao guardar: ' + err.message);
         }
@@ -637,8 +636,8 @@
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || 'Erro ao guardar alterações.');
 
-          carregarChamados();
           alert('Chamado atualizado com sucesso!');
+          await carregarChamados();
         } catch (err) {
           alert('Erro ao salvar: ' + err.message);
         }
@@ -652,7 +651,6 @@
         showLogin();
       });
 
-      // Funções para gerir o Zoom / Modal da Etiqueta
       function abrirZoomEtiqueta(base64Str) {
         const modal = document.getElementById('modal-zoom');
         const imgPreview = document.getElementById('img-zoom-preview');
@@ -671,7 +669,6 @@
         }
       }
 
-      // Função auxiliar para converter o ficheiro de imagem em Base64
       function converterArquivoParaBase64(file) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
@@ -681,7 +678,6 @@
         });
       }
 
-      // Criar Chamado com Captura/Upload da Etiqueta
       document.getElementById('form-chamado').addEventListener('submit', async (e) => {
         e.preventDefault();
         chamadoMsg.innerHTML = '';
