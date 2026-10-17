@@ -68,10 +68,10 @@ async function usePostgresAuthState(dbClient) {
   if (storedCreds) {
     creds = storedCreds;
   } else {
-    creds = baileys.AuthenticationCreds ? baileys.AuthenticationCreds.init() : {
-      noiseKey: baileys.generateKeyPair ? baileys.generateKeyPair() : undefined,
-      signedIdentityKey: baileys.generateKeyPair ? baileys.generateKeyPair() : undefined,
-      signedPreKey: baileys.generateSignedPreKey ? baileys.generateSignedPreKey(null, 1) : undefined,
+    creds = baileysPkg.AuthenticationCreds ? baileysPkg.AuthenticationCreds.init() : {
+      noiseKey: baileysPkg.generateKeyPair ? baileysPkg.generateKeyPair() : undefined,
+      signedIdentityKey: baileysPkg.generateKeyPair ? baileysPkg.generateKeyPair() : undefined,
+      signedPreKey: baileysPkg.generateSignedPreKey ? baileysPkg.generateSignedPreKey(null, 1) : undefined,
       registrationId: Math.floor(Math.random() * 1000000),
       advSecretKey: '',
       processedHistoryMessages: [],
