@@ -122,39 +122,46 @@ let sockWA = null;
 async function iniciarWhatsApp() {
   try {
     const { state, saveCreds } = await usePostgresAuthState(db);
-    
-    // Removido o printQRInTerminal obsoleto
+
     sockWA = makeWASocket({
       auth: state,
-      logger: pino({ level: 'silent' })
+      logger: pino({ level: 'silent' }),
+      browser: ['LL Tech Info', 'Chrome', '1.0.0']
     });
 
     sockWA.ev.on('creds.update', saveCreds);
 
     sockWA.ev.on('connection.update', (update) => {
-  const { connection, lastDisconnect, qr } = update;
+      const { connection, lastDisconnect, qr } = update;
 
-  // Desenha o QR Code visualmente nos logs do Render
-  if (qr) {
-  console.log('[WhatsApp] String do QR Code gerada (utilize uma ferramenta de leitura ou aguarde pareamento):');
-  console.log(qr);
-  }
+      if (qr) {
+        console.log('\n==================================================');
+        console.log('[WhatsApp] NOVO QR CODE GERADO:');
+        qrcode.generate(qr, { small: true });
+        console.log('==================================================\n');
+      }
 
-  if (connection === 'close') {
-    const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-    console.log('[WhatsApp] Conexão fechada. A tentar reconectar...', shouldReconnect);
-    if (shouldReconnect) {
-      iniciarWhatsApp();
-    }
-  } else if (connection === 'open') {
-    console.log('[WhatsApp] Conectado com sucesso ao WhatsApp da LL TECH INFO!');
-  }
-});
-    
+      if (connection === 'close') {
+        const statusCode = lastDisconnect?.error?.output?.statusCode;
+        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+        
+        console.log(`[WhatsApp] Conexão fechada (status: ${statusCode}). A tentar reconectar em 5 segundos...`);
+
+        if (shouldReconnect) {
+          // Aguarda 5 segundos antes de tentar reconectar para evitar loop contínuo
+          setTimeout(() => {
+            iniciarWhatsApp();
+          }, 5000);
+        }
+      } else if (connection === 'open') {
+        console.log('[WhatsApp] Conectado com sucesso ao WhatsApp da LL TECH INFO!');
+      }
+    });
   } catch (err) {
     console.error('[WhatsApp Init Error]:', err.message);
   }
 }
+
 // ==========================================
 // FUNÇÃO AUXILIAR: Envio de WhatsApp (Baileys)
 // ==========================================
