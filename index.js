@@ -9,7 +9,6 @@ const makeWASocket = baileysPkg.default.default || baileysPkg.default || baileys
 const DisconnectReason = baileysPkg.DisconnectReason;
 const BufferJSON = baileysPkg.BufferJSON;
 import pino from 'pino';
-import qrcode from 'qrcode-terminal';
 
 dotenv.config();
 
@@ -137,8 +136,8 @@ async function iniciarWhatsApp() {
 
   // Desenha o QR Code visualmente nos logs do Render
   if (qr) {
-    console.log('[WhatsApp] Escaneie o QR Code abaixo com o telemóvel da assistência:');
-    qrcode.generate(qr, { small: true });
+  console.log('[WhatsApp] String do QR Code gerada (utilize uma ferramenta de leitura ou aguarde pareamento):');
+  console.log(qr);
   }
 
   if (connection === 'close') {
