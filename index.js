@@ -126,17 +126,21 @@ async function iniciarWhatsApp() {
     sockWA = makeWASocket({
       auth: state,
       logger: pino({ level: 'silent' }),
-      browser: ['LL Tech Info', 'Chrome', '1.0.0']
+      browser: ['LL Tech Info', 'Chrome', '1.0.0'],
+      printQRInTerminal: false,
+      connectTimeoutMs: 60000,
+      defaultQueryTimeoutMs: 60000,
+      keepAliveIntervalMs: 25000
     });
 
     sockWA.ev.on('creds.update', saveCreds);
 
-    sockWA.ev.on('connection.update', (update) => {
+    sockWA.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
         console.log('\n==================================================');
-        console.log('[WhatsApp] NOVO QR CODE GERADO:');
+        console.log('[WhatsApp] NOVO QR CODE GERADO. LEIA COM O TELEMÓVEL:');
         qrcode.generate(qr, { small: true });
         console.log('==================================================\n');
       }
@@ -145,10 +149,9 @@ async function iniciarWhatsApp() {
         const statusCode = lastDisconnect?.error?.output?.statusCode;
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
         
-        console.log(`[WhatsApp] Conexão fechada (status: ${statusCode}). A tentar reconectar em 5 segundos...`);
+        console.log(`[WhatsApp] Conexão fechada (status: ${statusCode || 'reconexão inicial'}). A aguardar 5s...`);
 
         if (shouldReconnect) {
-          // Aguarda 5 segundos antes de tentar reconectar para evitar loop contínuo
           setTimeout(() => {
             iniciarWhatsApp();
           }, 5000);
