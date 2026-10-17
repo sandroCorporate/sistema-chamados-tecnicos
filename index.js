@@ -63,14 +63,12 @@ async function usePostgresAuthState(dbClient) {
     } catch (error) {}
   };
 
-  // Utiliza o gestor de credenciais padrão do Baileys de forma segura
   let creds;
   const storedCreds = await readData('creds');
   
   if (storedCreds) {
     creds = storedCreds;
   } else {
-    // Se não existir, gera novas credenciais limpas compatíveis com a versão 6.x
     creds = baileys.AuthenticationCreds ? baileys.AuthenticationCreds.init() : {
       noiseKey: baileys.generateKeyPair ? baileys.generateKeyPair() : undefined,
       signedIdentityKey: baileys.generateKeyPair ? baileys.generateKeyPair() : undefined,
@@ -116,6 +114,7 @@ async function usePostgresAuthState(dbClient) {
     saveCreds: () => writeData(state.creds, 'creds')
   };
 }
+
 // ==========================================
 // CONFIGURAÇÃO DO WHATSAPP NATIVO (BAILEYS)
 // ==========================================
@@ -127,7 +126,7 @@ async function iniciarWhatsApp() {
     
     sockWA = makeWASocket({
       auth: state,
-      printQRInTerminal: true, // O QR Code aparecerá diretamente nos Logs do Render
+      printQRInTerminal: true,
       logger: pino({ level: 'silent' })
     });
 
@@ -285,15 +284,19 @@ app.post('/api/login', async (req, res) => {
 });
 
 // ==========================================
-// ROTA: Listar Chamados
+// ROTA: Listar Chamados (Corrigida para Técnicos e Clientes)
 // ==========================================
 app.get('/api/chamados', autenticarToken, async (req, res) => {
   try {
-    if (req.usuario.tipo !== 'CLIENTE') {
+    const tipoUsuario = String(req.usuario.tipo || '').toUpperCase();
+
+    // Se NÃO for cliente (ou seja, for TÉCNICO ou ADMIN), traz TODOS os chamados
+    if (tipoUsuario !== 'CLIENTE') {
       const { rows } = await db.query('SELECT * FROM chamados ORDER BY criado_em DESC');
       return res.json(rows);
     }
 
+    // Se for CLIENTE, traz apenas os chamados associados ao seu ID
     let rows;
     try {
       const resQuery = await db.query('SELECT * FROM chamados WHERE usuario_id = \$1 ORDER BY criado_em DESC', [req.usuario.id]);
@@ -552,7 +555,8 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
     const { id } = req.params;
     const { status, valor } = req.body;
 
-    if (!req.usuario || req.usuario.tipo.toUpperCase() !== 'TECNICO') {
+    const tipoUsuario = String(req.usuario ? req.usuario.tipo : '').toUpperCase();
+    if (tipoUsuario === 'CLIENTE') {
       return res.status(403).json({ error: 'Acesso negado. Apenas técnicos podem atualizar chamados.' });
     }
 
@@ -631,7 +635,8 @@ app.patch('/api/chamados/:id/valor', autenticarToken, async (req, res) => {
     const { id } = req.params;
     const { valor } = req.body;
 
-    if (req.usuario.tipo === 'CLIENTE') {
+    const tipoUsuario = String(req.usuario ? req.usuario.tipo : '').toUpperCase();
+    if (tipoUsuario === 'CLIENTE') {
       return res.status(403).json({ error: 'Apenas técnicos podem alterar valores.' });
     }
 
