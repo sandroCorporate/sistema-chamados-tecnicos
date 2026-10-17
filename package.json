@@ -1,12 +1,14 @@
 {
   "name": "sistema-chamados-tecnicos",
   "version": "1.0.0",
-  "type": "module",
-  "private": true,
+  "description": "Sistema de Chamados Técnicos - LL TECH INFO",
+  "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.8",
+    "pino": "^9.0.0",
     "@neondatabase/serverless": "^0.10.4",
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.7",
