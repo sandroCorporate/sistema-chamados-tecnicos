@@ -121,9 +121,6 @@ async function usePostgresAuthState(dbClient) {
 // CONFIGURAÇÃO DO WHATSAPP NATIVO (BAILEYS)
 // ==========================================
 let sockWA = null;
-
-import { makeWASocket, DisconnectReason, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
-
 async function iniciarWhatsApp() {
   try {
     const { state, saveCreds } = await usePostgresAuthState(db);
