@@ -137,12 +137,8 @@ async function iniciarWhatsApp() {
 
       // Se o Baileys gerar um novo QR Code, exibe-o nos logs
       if (qr) {
-        console.log('[WhatsApp] Novo QR Code gerado. Utilize a aplicação para ler.');
-        // Pode importar e usar o qrcode-terminal se desejar desenhar no terminal, 
-        // ou visualizar a string do QR Code:
-        console.log(qr);
-      }
-
+  qrcode.generate(qr, { small: true });
+  }
       if (connection === 'close') {
         const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
         console.log('[WhatsApp] Conexão fechada. A tentar reconectar...', shouldReconnect);
