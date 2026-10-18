@@ -204,10 +204,12 @@ async function iniciarWhatsApp() {
         const loggedOut = statusCode === DisconnectReason.loggedOut;
 
         if (!loggedOut) {
-          console.log('[WhatsApp] A tentar nova inicialização em 5 segundos...');
+          // Jitter de segurança documentado nas soluções de sucesso da comunidade (evita o bloqueio 428)
+          const delayTime = 4000 + Math.floor(Math.random() * 3000);
+          console.log(`[WhatsApp] A tentar nova inicialização em ${Math.round(delayTime / 1000)} segundos...`);
           setTimeout(() => {
             iniciarWhatsApp();
-          }, 5000);
+          }, delayTime);
         } else {
           console.log('[WhatsApp] Sessão encerrada.');
         }
