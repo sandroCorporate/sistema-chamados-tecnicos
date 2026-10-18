@@ -174,7 +174,8 @@ async function iniciarWhatsApp() {
 
       if (qr) {
         console.log('\n==================================================');
-        console.log('[WhatsApp] ESCANEIE ESTE QR CODE COM O SEU TELEMÓVEL:');
+        console.log('[WhatsApp] CÓDIGO QR GERADO (STRING RAW):');
+        console.log(qr);
         console.log('==================================================\n');
         qrcode.generate(qr, { small: true });
         console.log('\n==================================================\n');
