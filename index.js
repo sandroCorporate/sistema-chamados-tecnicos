@@ -167,10 +167,14 @@ async function iniciarWhatsApp() {
       if (connection === 'open') {
         console.log('[WhatsApp] Conectado com sucesso ao WhatsApp da LL TECH INFO!');
       } else if (connection === 'close') {
-        const statusCode = lastDisconnect?.error?.output?.statusCode;
-        const loggedOut = statusCode === DisconnectReason.loggedOut;
+        const error = lastDisconnect?.error;
+        const statusCode = error?.output?.statusCode;
+        const errorMessage = error?.message || String(error);
 
-        console.log(`[WhatsApp] Conexão terminada. Status: ${statusCode || 'desconhecido'}.`);
+        console.log(`[WhatsApp Debug] Conexão terminada. Status Code: ${statusCode || 'N/A'} | Erro completo:`, errorMessage);
+        console.log('[WhatsApp Debug] Objeto lastDisconnect completo:', JSON.stringify(lastDisconnect, null, 2));
+
+        const loggedOut = statusCode === DisconnectReason.loggedOut;
 
         if (!loggedOut) {
           console.log('[WhatsApp] A tentar nova inicialização em 5 segundos...');
