@@ -133,15 +133,19 @@ let sockWA = null;
 async function iniciarWhatsApp() {
   try {
     const { state, saveCreds } = await usePostgresAuthState(db);
+    
+    // Versão estável rigorosa para evitar rejeição do servidor do WhatsApp
     const version = [2, 3000, 1015901307];
-    console.log(`[WhatsApp] A usar Baileys v${version.join('.')}`);
+    console.log(`[WhatsApp] A inicializar socket com Baileys v${version.join('.')}`);
 
     sockWA = makeWASocket({
       version,
       auth: state,
       logger: pino({ level: 'silent' }),
       browser: ['LL Tech Info', 'Chrome', '1.0.0'],
-      generateHighQualityLinkPreview: true
+      generateHighQualityLinkPreview: true,
+      markOnlineOnConnect: false,
+      syncFullHistory: false
     });
 
     sockWA.ev.on('creds.update', saveCreds);
@@ -149,9 +153,7 @@ async function iniciarWhatsApp() {
     sockWA.ev.on('connection.update', (update) => {
       const { connection, lastDisconnect, qr } = update;
 
-      // Log de diagnóstico para inspecionar o update recebido
-      console.log('[WhatsApp Update Diagnóstico]:', JSON.stringify({ connection, lastDisconnect, hasQr: !!qr }));
-
+      // Se o Baileys gerou o QR Code, imprime de imediato na consola do Render
       if (qr) {
         console.log('\n==================================================');
         console.log('[WhatsApp] ESCANEIE ESTE QR CODE COM O SEU TELEMÓVEL:');
@@ -169,15 +171,19 @@ async function iniciarWhatsApp() {
         console.log(`[WhatsApp] Conexão terminada. Status: ${statusCode || 'desconhecido'}.`);
 
         if (!loggedOut) {
-          console.log('[WhatsApp] A agendar nova tentativa de ligação em 10 segundos...');
+          console.log('[WhatsApp] A tentar nova inicialização em 5 segundos...');
           setTimeout(() => {
             iniciarWhatsApp();
-          }, 10000);
+          }, 5000);
         } else {
           console.log('[WhatsApp] Sessão encerrada.');
         }
       }
     });
+  } catch (err) {
+    console.error('[WhatsApp Init Error crítico]:', err.message);
+  }
+}
     
 // ==========================================
 // FUNÇÃO AUXILIAR: Envio de WhatsApp (Baileys)
