@@ -8,7 +8,9 @@ import { MercadoPagoConfig, Payment } from 'mercadopago';
 import pino from 'pino';
 import qrcode from 'qrcode-terminal';
 
-// Extração única e totalmente segura do Baileys
+// ==========================================
+// EXTRAÇÃO SEGURA DO BAILEYS (ESM COMPATIBILIDADE)
+// ==========================================
 const makeWASocket = typeof baileysPkg === 'function' 
   ? baileysPkg 
   : (baileysPkg.default?.default || baileysPkg.default || baileysPkg.makeWASocket);
@@ -44,7 +46,7 @@ async function usePostgresAuthState(dbClient) {
   `);
 
   const writeData = async (data, key) => {
-    const serialized = JSON.stringify(data, BufferJSON.replacer);
+    const serialized = JSON.stringify(data, (k, v) => Buffer.isBuffer(v) ? { type: 'Buffer', data: v.toString('base64') } : v);
     await dbClient.query(
       `INSERT INTO whatsapp_auth (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
       [key, serialized]
@@ -55,7 +57,15 @@ async function usePostgresAuthState(dbClient) {
     try {
       const { rows } = await dbClient.query('SELECT value FROM whatsapp_auth WHERE key = \$1', [key]);
       if (rows.length === 0) return null;
-      return JSON.parse(rows[0].value, BufferJSON.reviver);
+      return JSON.parse(rows[0].value, (k, v) => {
+        if (v !== null && typeof v === 'object' && v.type === 'Buffer' && Array.isArray(v.data)) {
+          return Buffer.from(v.data);
+        }
+        if (v !== null && typeof v === 'object' && v.type === 'Buffer' && typeof v.data === 'string') {
+          return Buffer.from(v.data, 'base64');
+        }
+        return v;
+      });
     } catch (error) {
       return null;
     }
@@ -74,9 +84,6 @@ async function usePostgresAuthState(dbClient) {
     creds = storedCreds;
   } else {
     creds = baileysPkg.AuthenticationCreds ? baileysPkg.AuthenticationCreds.init() : {
-      noiseKey: baileysPkg.generateKeyPair ? baileysPkg.generateKeyPair() : undefined,
-      signedIdentityKey: baileysPkg.generateKeyPair ? baileysPkg.generateKeyPair() : undefined,
-      signedPreKey: baileysPkg.generateSignedPreKey ? baileysPkg.generateSignedPreKey(null, 1) : undefined,
       registrationId: Math.floor(Math.random() * 1000000),
       advSecretKey: '',
       processedHistoryMessages: [],
@@ -126,7 +133,7 @@ let sockWA = null;
 async function iniciarWhatsApp() {
   try {
     const { state, saveCreds } = await usePostgresAuthState(db);
-    const version = [2, 3000, 1015901307]; // Versão estável padrão do Baileys
+    const version = [2, 3000, 1015901307];
     console.log(`[WhatsApp] A usar Baileys v${version.join('.')}`);
 
     sockWA = makeWASocket({
@@ -142,12 +149,13 @@ async function iniciarWhatsApp() {
     sockWA.ev.on('connection.update', (update) => {
       const { connection, lastDisconnect, qr } = update;
 
-      // Imprime o QR Code sempre que recebido
+      // Imprime o QR Code de forma limpa na consola do Render
       if (qr) {
         console.log('\n==================================================');
         console.log('[WhatsApp] ESCANEIE ESTE QR CODE COM O SEU TELEMÓVEL:');
-        qrcode.generate(qr, { small: true });
         console.log('==================================================\n');
+        qrcode.generate(qr, { small: true });
+        console.log('\n==================================================\n');
       }
 
       if (connection === 'open') {
@@ -158,14 +166,13 @@ async function iniciarWhatsApp() {
 
         console.log(`[WhatsApp] Conexão terminada. Status: ${statusCode || 'desconhecido'}.`);
 
-        // Se não foi deslogado intencionalmente, tenta reconectar após 10 segundos
         if (!loggedOut) {
           console.log('[WhatsApp] A agendar nova tentativa de ligação em 10 segundos...');
           setTimeout(() => {
             iniciarWhatsApp();
           }, 10000);
         } else {
-          console.log('[WhatsApp] Sessão encerrada pelo utilizador. Limpe a tabela e reinicie.');
+          console.log('[WhatsApp] Sessão encerrada. Limpe a tabela e reinicie.');
         }
       }
     });
@@ -173,6 +180,7 @@ async function iniciarWhatsApp() {
     console.error('[WhatsApp Init Error]:', err.message);
   }
 }
+
 // ==========================================
 // FUNÇÃO AUXILIAR: Envio de WhatsApp (Baileys)
 // ==========================================
@@ -222,22 +230,17 @@ function autenticarToken(req, res, next) {
 }
 
 // ==========================================
-// ROTA: Frontend Principal (SPA)
+// ROTAS DO SISTEMA
 // ==========================================
 app.get('/', (req, res) => {
   res.sendFile(process.cwd() + '/index.html');
 });
 
-// ==========================================
-// ROTA: Cadastro Público de Clientes
-// ==========================================
 app.post('/api/registro', async (req, res) => {
   const { nome, email, telefone, documento, senha } = req.body;
 
   if (!nome || !email || !telefone || !documento || !senha) {
-    return res.status(400).json({ 
-      error: 'Preencha todos os campos obrigatórios: Nome, E-mail, WhatsApp, CPF/CNPJ e Senha.' 
-    });
+    return res.status(400).json({ error: 'Preencha todos os campos obrigatórios.' });
   }
 
   let telLimpo = telefone.replace(/\D/g, '');
@@ -247,27 +250,21 @@ app.post('/api/registro', async (req, res) => {
 
   try {
     const hashSenha = await bcrypt.hash(senha, 10);
-
     const query = `
       INSERT INTO usuarios (nome, email, telefone, documento, senha, senha_hash, tipo)
       VALUES ($1, $2, $3, $4, $5, $5, 'CLIENTE')
       RETURNING id, nome, email, telefone, tipo;
     `;
-    
     const result = await db.query(query, [nome, email, telLimpo, documento, hashSenha]);
     return res.status(201).json({ message: 'Cliente cadastrado com sucesso!', usuario: result.rows[0] });
-
   } catch (error) {
     if (error.code === '23505') {
-      return res.status(400).json({ error: 'E-mail ou CPF/CNPJ já cadastrado no sistema.' });
+      return res.status(400).json({ error: 'E-mail ou CPF/CNPJ já cadastrado.' });
     }
-    res.status(500).json({ error: 'Erro interno ao registrar cliente: ' + error.message });
+    res.status(500).json({ error: 'Erro interno ao registrar: ' + error.message });
   }
 });
 
-// ==========================================
-// ROTA: Login
-// ==========================================
 app.post('/api/login', async (req, res) => {
   try {
     const { email, senha } = req.body;
@@ -278,10 +275,6 @@ app.post('/api/login', async (req, res) => {
 
     const usuario = rows[0];
     const hashGravado = usuario.senha || usuario.senha_hash;
-    if (!hashGravado) {
-      return res.status(500).json({ error: 'Hash de senha não encontrado.' });
-    }
-
     const senhaValida = await bcrypt.compare(senha, hashGravado);
     if (!senhaValida) {
       return res.status(401).json({ error: 'Credenciais inválidas.' });
@@ -293,34 +286,21 @@ app.post('/api/login', async (req, res) => {
 
     res.json({
       token,
-      usuario: {
-        id: usuario.id,
-        nome: usuario.nome,
-        email: usuario.email,
-        tipo,
-        telefone: usuario.telefone,
-      },
+      usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, tipo, telefone: usuario.telefone },
     });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: 'Erro ao realizar login.' });
   }
 });
 
-// ==========================================
-// ROTA: Listar Chamados (Corrigida para Técnicos e Clientes)
-// ==========================================
 app.get('/api/chamados', autenticarToken, async (req, res) => {
   try {
     const tipoUsuario = String(req.usuario.tipo || '').toUpperCase();
-
-    // Se NÃO for cliente (ou seja, for TÉCNICO ou ADMIN), traz TODOS os chamados
     if (tipoUsuario !== 'CLIENTE') {
       const { rows } = await db.query('SELECT * FROM chamados ORDER BY criado_em DESC');
       return res.json(rows);
     }
 
-    // Se for CLIENTE, traz apenas os chamados associados ao seu ID
     let rows;
     try {
       const resQuery = await db.query('SELECT * FROM chamados WHERE usuario_id = \$1 ORDER BY criado_em DESC', [req.usuario.id]);
@@ -334,17 +314,12 @@ app.get('/api/chamados', autenticarToken, async (req, res) => {
         rows = resQuery.rows;
       }
     }
-
     res.json(rows);
   } catch (error) {
-    console.error('Erro ao buscar chamados:', error);
     res.status(500).json({ error: 'Erro ao buscar chamados.' });
   }
 });
 
-// ==========================================
-// ROTA: Criar Chamado com Suporte a Foto da Etiqueta
-// ==========================================
 app.post('/api/chamados', autenticarToken, async (req, res) => {
   try {
     const { titulo, descricao, etiqueta_foto } = req.body;
@@ -352,9 +327,7 @@ app.post('/api/chamados', autenticarToken, async (req, res) => {
       return res.status(400).json({ error: 'Título e descrição são obrigatórios.' });
     }
 
-    try {
-      await db.query('ALTER TABLE chamados ADD COLUMN IF NOT EXISTS etiqueta_foto TEXT;');
-    } catch (e) {}
+    try { await db.query('ALTER TABLE chamados ADD COLUMN IF NOT EXISTS etiqueta_foto TEXT;'); } catch (e) {}
 
     let result;
     try {
@@ -370,93 +343,59 @@ app.post('/api/chamados', autenticarToken, async (req, res) => {
     }
 
     const chamadoId = result.rows[0].id;
-
     const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = \$1', [req.usuario.id]);
     const cliente = userRes.rows[0];
+
     if (cliente && cliente.telefone) {
       const msgAbertura = `🖥️ *LL TECH INFO - SUPORTE TÉCNICO*
 ----------------------------------------
 Olá, *${cliente.nome}*!
-
 O seu chamado foi registrado com sucesso.
-📌 *Chamado:* #${chamadoId.substring(0, 8)}
+📌 *Chamado:* #${String(chamadoId).substring(0, 8)}
 📝 *Assunto:* ${titulo}
-📸 *Etiqueta do Equipamento:* ${etiqueta_foto ? 'Anexada' : 'Não anexada'}
-🟢 *Status:* ABERTO
-
-Acompanhe a evolução pelo portal.`;
-
+🟢 *Status:* ABERTO`;
       enviarNotificacaoWhatsApp(cliente.telefone, msgAbertura);
     }
 
-    res.status(201).json({
-      mensagem: 'Chamado aberto com sucesso!',
-      chamado: result.rows[0],
-    });
+    res.status(201).json({ mensagem: 'Chamado aberto com sucesso!', chamado: result.rows[0] });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: 'Erro ao abrir chamado.' });
   }
 });
 
-// ==========================================
-// ROTA: Gerar Pagamento Pix
-// ==========================================
 app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { valor } = req.body;
 
-    if (!valor || valor <= 0) {
-      return res.status(400).json({ error: 'Valor inválido para o pagamento.' });
-    }
-
     const chamadoRes = await db.query('SELECT * FROM chamados WHERE id = \$1', [id]);
-    if (chamadoRes.rows.length === 0) {
-      return res.status(404).json({ error: 'Chamado não encontrado.' });
-    }
+    if (chamadoRes.rows.length === 0) return res.status(404).json({ error: 'Chamado não encontrado.' });
     const chamado = chamadoRes.rows[0];
 
     const userRes = await db.query('SELECT nome, email, telefone, documento FROM usuarios WHERE id = \$1', [req.usuario.id]);
     const cliente = userRes.rows[0] || {};
 
     let docLimpo = cliente.documento ? cliente.documento.replace(/\D/g, '') : '00000000000';
-    if (docLimpo.length !== 11 && docLimpo.length !== 14) {
-      docLimpo = '12345678909';
-    }
+    if (docLimpo.length !== 11 && docLimpo.length !== 14) docLimpo = '12345678909';
     const tipoDoc = docLimpo.length === 14 ? 'CNPJ' : 'CPF';
 
-    let pagamentoId, qrCode, qrCodeBase64;
+    const payment = new Payment(mpClient);
+    const body = {
+      transaction_amount: Number(valor),
+      description: `LL TECH INFO - Chamado #${String(chamado.id).substring(0, 8)}`,
+      payment_method_id: 'pix',
+      payer: {
+        email: cliente.email || 'suporte@lltech.info',
+        first_name: cliente.nome ? cliente.nome.split(' ')[0] : 'Cliente',
+        last_name: cliente.nome ? cliente.nome.split(' ').slice(1).join(' ') || 'LL Tech' : 'LL Tech',
+        identification: { type: tipoDoc, number: docLimpo }
+      },
+    };
 
-    try {
-      const payment = new Payment(mpClient);
-      const body = {
-        transaction_amount: Number(valor),
-        description: `LL TECH INFO - Chamado #${chamado.id.substring(0, 8)}`,
-        payment_method_id: 'pix',
-        payer: {
-          email: cliente.email || req.usuario.email || 'suporte@lltech.info',
-          first_name: cliente.nome ? cliente.nome.split(' ')[0] : 'Cliente',
-          last_name: cliente.nome ? cliente.nome.split(' ').slice(1).join(' ') || 'LL Tech' : 'LL Tech',
-          identification: {
-            type: tipoDoc,
-            number: docLimpo
-          }
-        },
-      };
-
-      const response = await payment.create({ body });
-      qrCode = response?.point_of_interaction?.transaction_data?.qr_code;
-      qrCodeBase64 = response?.point_of_interaction?.transaction_data?.qr_code_base64;
-      pagamentoId = response?.id;
-
-      if (!qrCode) {
-        throw new Error('A API do Mercado Pago não retornou o código Pix.');
-      }
-    } catch (apiErr) {
-      console.error('[Mercado Pago Erro Real]:', apiErr.message);
-      return res.status(500).json({ error: 'Erro ao gerar Pix no Mercado Pago: ' + apiErr.message });
-    }
+    const response = await payment.create({ body });
+    const qrCode = response?.point_of_interaction?.transaction_data?.qr_code;
+    const qrCodeBase64 = response?.point_of_interaction?.transaction_data?.qr_code_base64;
+    const pagamentoId = response?.id;
 
     await db.query(
       'UPDATE chamados SET status = \$1, valor = \$2, pagamento_id = \$3 WHERE id = \$4',
@@ -466,39 +405,23 @@ app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
     if (cliente && cliente.telefone) {
       const msgPix = `🖥️ *LL TECH INFO - COBRANÇA PIX*
 ----------------------------------------
-Olá, *${cliente.nome}*!
-
-Cobrança gerada para o Chamado *#${chamado.id.substring(0, 8)}*.
+Cobrança gerada para o Chamado *#${String(chamado.id).substring(0, 8)}*.
 💰 *Valor:* R$ ${Number(valor).toFixed(2)}
-
-📌 *Código Pix Copia e Cola:*
-${qrCode}
-
-Efetue o pagamento para darmos seguimento ao atendimento.`;
+📌 *Pix Copia e Cola:*
+${qrCode}`;
       enviarNotificacaoWhatsApp(cliente.telefone, msgPix);
     }
 
-    return res.json({
-      mensagem: 'Cobrança Pix gerada com sucesso!',
-      pagamentoId,
-      qrCode,
-      qrCodeBase64,
-    });
+    return res.json({ mensagem: 'Cobrança Pix gerada!', pagamentoId, qrCode, qrCodeBase64 });
   } catch (error) {
-    console.error('Erro detalhado no pagamento Pix:', error);
-    return res.status(500).json({ error: 'Erro ao gerar pagamento Pix: ' + error.message });
+    return res.status(500).json({ error: 'Erro ao gerar Pix: ' + error.message });
   }
 });
 
-// ==========================================
-// ROTA: Webhook Mercado Pago
-// ==========================================
 app.post('/api/webhook/mercadopago', async (req, res) => {
   try {
     const { action, type, data } = req.body;
-    const queryId = req.query['data.id'] || req.query.id;
-
-    const paymentId = data?.id || queryId;
+    const paymentId = data?.id || req.query['data.id'] || req.query.id;
 
     if (paymentId && (type === 'payment' || action?.includes('payment'))) {
       const payment = new Payment(mpClient);
@@ -513,80 +436,52 @@ app.post('/api/webhook/mercadopago', async (req, res) => {
         if (updateRes.rows.length > 0) {
           const ch = updateRes.rows[0];
           const userId = ch.usuario_id || ch.cliente_id || ch.usuarioid;
-          
-          if (userId) {
-            const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = \$1', [userId]);
-            const cliente = userRes.rows[0];
-            
-            if (cliente && cliente.telefone) {
-              const msgAprovado = `🖥️ *LL TECH INFO - PAGAMENTO CONFIRMADO*
-----------------------------------------
-Olá, *${cliente.nome}*!
+          const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = \$1', [userId]);
+          const cliente = userRes.rows[0];
 
-O pagamento do chamado *#${ch.id.substring(0, 8)}* foi aprovado com sucesso!
-🟢 *Status Atual:* EM ATENDIMENTO
-
-A nossa equipa técnica já iniciou o atendimento.`;
-              await enviarNotificacaoWhatsApp(cliente.telefone, msgAprovado);
-            }
+          if (cliente && cliente.telefone) {
+            enviarNotificacaoWhatsApp(cliente.telefone, `🖥️ *LL TECH INFO - PAGAMENTO APROVADO*
+O pagamento do chamado *#${String(ch.id).substring(0, 8)}* foi confirmado! Status: EM ATENDIMENTO.`);
           }
         }
       }
     }
-
     return res.status(200).send('OK');
   } catch (error) {
-    console.error('[Webhook Erro]:', error.message);
     return res.status(200).send('OK');
   }
 });
 
-// ==========================================
-// ROTA AUXILIAR: Verificar Status do Pagamento
-// ==========================================
 app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, res) => {
   try {
     const { id } = req.params;
     const chamadoRes = await db.query('SELECT * FROM chamados WHERE id = \$1', [id]);
-    
-    if (chamadoRes.rows.length === 0) {
-      return res.status(404).json({ error: 'Chamado não encontrado.' });
-    }
-
+    if (chamadoRes.rows.length === 0) return res.status(404).json({ error: 'Chamado não encontrado.' });
     const chamado = chamadoRes.rows[0];
 
     if (chamado.pagamento_id && chamado.status === 'AGUARDANDO PAGAMENTO') {
       const payment = new Payment(mpClient);
       const paymentInfo = await payment.get({ id: chamado.pagamento_id });
-
       if (paymentInfo && paymentInfo.status === 'approved') {
         await db.query("UPDATE chamados SET status = 'EM ATENDIMENTO' WHERE id = \$1", [id]);
         return res.json({ status: 'EM ATENDIMENTO', pago: true });
       }
     }
-
     return res.json({ status: chamado.status, pago: chamado.status !== 'AGUARDANDO PAGAMENTO' });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 });
 
-// ==========================================
-// ROTA: Atualizar Chamado (Técnico)
-// ==========================================
 app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { status, valor } = req.body;
-
-    const tipoUsuario = String(req.usuario ? req.usuario.tipo : '').toUpperCase();
-    if (tipoUsuario === 'CLIENTE') {
-      return res.status(403).json({ error: 'Acesso negado. Apenas técnicos podem atualizar chamados.' });
+    if (String(req.usuario?.tipo).toUpperCase() === 'CLIENTE') {
+      return res.status(403).json({ error: 'Acesso negado.' });
     }
 
-    try {
-      await db.query('ALTER TABLE chamados ADD COLUMN IF NOT EXISTS valor NUMERIC(10,2) DEFAULT 0.00;');
-    } catch (e) {}
+    try { await db.query('ALTER TABLE chamados ADD COLUMN IF NOT EXISTS valor NUMERIC(10,2) DEFAULT 0.00;'); } catch (e) {}
 
     let query, params;
     if (valor !== undefined && status !== undefined) {
@@ -595,120 +490,20 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
     } else if (status !== undefined) {
       query = 'UPDATE chamados SET status = \$1 WHERE id = \$2 RETURNING *';
       params = [status, id];
-    } else if (valor !== undefined) {
+    } else {
       query = 'UPDATE chamados SET valor = \$1 WHERE id = \$2 RETURNING *';
       params = [valor, id];
-    } else {
-      return res.status(400).json({ error: 'Nenhum dado fornecido para atualização.' });
     }
 
     const result = await db.query(query, params);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Chamado não encontrado.' });
-    }
-
-    const chamado = result.rows[0];
-    const clienteId = chamado.usuario_id || chamado.cliente_id || chamado.usuarioid;
-
-    if (clienteId) {
-      try {
-        const userRes = await db.query('SELECT telefone, nome FROM usuarios WHERE id = \$1', [clienteId]);
-        const cliente = userRes.rows[0];
-        
-        if (cliente && cliente.telefone) {
-          const idCurto = String(chamado.id).substring(0, 8);
-          const valorFormatado = chamado.valor ? parseFloat(chamado.valor).toFixed(2) : '0.00';
-          
-          let linhaValor = '';
-          if (chamado.valor) {
-            linhaValor = '💰 *Valor do Serviço:* R\$ ' + valorFormatado;
-          }
-
-          const msgAtualizacao = `🖥️ *LL TECH INFO - ATUALIZAÇÃO DE CHAMADO*
-----------------------------------------
-Olá, *${cliente.nome}*!
-
-O seu chamado *#${idCurto}* foi atualizado pela nossa equipa técnica.
-
-📌 *Assunto:* ${chamado.titulo}
-🔄 *Novo Status:* ${String(chamado.status).toUpperCase()}
-${linhaValor}
-
-Aceda ao portal para efetuar o pagamento via Pix e prosseguir com o atendimento.`;
-
-          await enviarNotificacaoWhatsApp(cliente.telefone, msgAtualizacao);
-        }
-      } catch (waErr) {
-        console.error('[WhatsApp Aviso] Erro ao enviar notificação de status:', waErr.message);
-      }
-    }
-
-    res.json({ mensagem: 'Chamado atualizado com sucesso!', chamado });
+    res.json({ mensagem: 'Chamado atualizado!', chamado: result.rows[0] });
   } catch (error) {
-    console.error('Erro ao atualizar chamado:', error);
-    res.status(500).json({ error: 'Erro interno ao atualizar chamado: ' + error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
 // ==========================================
-// ROTA: Atualizar Valor do Chamado
-// ==========================================
-app.patch('/api/chamados/:id/valor', autenticarToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { valor } = req.body;
-
-    const tipoUsuario = String(req.usuario ? req.usuario.tipo : '').toUpperCase();
-    if (tipoUsuario === 'CLIENTE') {
-      return res.status(403).json({ error: 'Apenas técnicos podem alterar valores.' });
-    }
-
-    const result = await db.query(
-      'UPDATE chamados SET valor = \$1 WHERE id = \$2 RETURNING *',
-      [valor, id]
-    );
-
-    res.json({ mensagem: 'Valor atualizado!', chamado: result.rows[0] });
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao atualizar valor.' });
-  }
-});
-
-// ==========================================
-// ROTA: Editar Chamado
-// ==========================================
-app.patch('/api/chamados/:id/editar', autenticarToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { titulo, descricao } = req.body;
-
-    const { rows } = await db.query('SELECT * FROM chamados WHERE id = \$1', [id]);
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Chamado não encontrado.' });
-    }
-
-    const chamado = rows[0];
-    if (chamado.status !== 'ABERTO') {
-      return res.status(400).json({ error: 'Apenas chamados ABERTOS podem ser editados.' });
-    }
-
-    const result = await db.query(
-      'UPDATE chamados SET titulo = \$1, descricao = \$2 WHERE id = \$3 RETURNING *',
-      [titulo, descricao, id]
-    );
-
-    res.json({
-      mensagem: 'Chamado atualizado com sucesso!',
-      chamado: result.rows[0],
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message || 'Erro ao editar chamado.' });
-  }
-});
-
-// ==========================================
-// INICIALIZAÇÃO DO SERVIDOR & WHATSAPP
+// INICIALIZAÇÃO
 // ==========================================
 app.listen(PORT, () => {
   console.log(`Servidor LL TECH INFO rodando na porta ${PORT}`);
