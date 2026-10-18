@@ -13,7 +13,7 @@ const makeWASocket = typeof baileysPkg === 'function'
   ? baileysPkg 
   : (baileysPkg.default?.default || baileysPkg.default || baileysPkg.makeWASocket);
 
-const DisconnectReason = baileysPkg.DisconnectReason || baileysPkg.default?.DisconnectReason;
+const DisconnectReason = baileysPkg.DisconnectReason || baileysPkg.default?.DisconnectReason || { loggedOut: 401 };
 
 dotenv.config();
 
