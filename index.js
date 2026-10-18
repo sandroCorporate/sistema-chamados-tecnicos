@@ -172,7 +172,10 @@ async function iniciarWhatsApp() {
       browser: ['LL Tech Info', 'Chrome', '1.0.0'],
       generateHighQualityLinkPreview: true,
       markOnlineOnConnect: false,
-      syncFullHistory: false
+      syncFullHistory: false,
+      connectTimeoutMs: 60000,
+      defaultQueryTimeoutMs: 60000,
+      keepAliveIntervalMs: 25000
     });
 
     sockWA.ev.on('creds.update', saveCreds);
@@ -532,7 +535,7 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
     const result = await db.query(query, params);
     res.json({ mensagem: 'Chamado atualizado!', chamado: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
