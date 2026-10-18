@@ -19,6 +19,7 @@ const makeWASocket = typeof baileysModule === 'function'
 
 const DisconnectReason = baileysModule.DisconnectReason || baileysModule.default?.DisconnectReason || { loggedOut: 401 };
 const fetchLatestBaileysVersion = async () => ({ version: [2, 3004, 10], isLatest: true });
+const initAuthCreds = baileysModule.initAuthCreds || baileysModule.default?.initAuthCreds || baileysPkg.initAuthCreds;
 
 dotenv.config();
 
@@ -86,7 +87,7 @@ async function usePostgresAuthState(dbClient) {
   if (storedCreds) {
     creds = storedCreds;
   } else {
-    creds = baileysPkg.AuthenticationCreds ? baileysPkg.AuthenticationCreds.init() : {
+    creds = initAuthCreds ? initAuthCreds() : {
       registrationId: Math.floor(Math.random() * 1000000),
       advSecretKey: '',
       processedHistoryMessages: [],
@@ -125,7 +126,7 @@ async function usePostgresAuthState(dbClient) {
         }
       }
     },
-    saveCreds: () => writeData(state.creds, 'creds')
+    saveCreds: () => writeData(creds, 'creds')
   };
 }
 
@@ -137,7 +138,6 @@ async function iniciarWhatsApp() {
   try {
     const { state, saveCreds } = await usePostgresAuthState(db);
     
-    // Obtenção dinâmica da versão oficial do Baileys para evitar rejeição
     const { version, isLatest } = await fetchLatestBaileysVersion();
     console.log(`[WhatsApp] A usar versão oficial do Baileys v${version.join('.')} (É a mais recente? ${isLatest})`);
 
@@ -156,7 +156,6 @@ async function iniciarWhatsApp() {
     sockWA.ev.on('connection.update', (update) => {
       const { connection, lastDisconnect, qr } = update;
 
-      // Se o Baileys gerou o QR Code, imprime de imediato na consola do Render
       if (qr) {
         console.log('\n==================================================');
         console.log('[WhatsApp] ESCANEIE ESTE QR CODE COM O SEU TELEMÓVEL:');
@@ -505,7 +504,7 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
     const result = await db.query(query, params);
     res.json({ mensagem: 'Chamado atualizado!', chamado: result.rows[0] });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
