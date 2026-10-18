@@ -164,8 +164,7 @@ async function iniciarWhatsApp() {
       browser: ['LL Tech Info', 'Chrome', '1.0.0'],
       generateHighQualityLinkPreview: true,
       markOnlineOnConnect: false,
-      syncFullHistory: false,
-      printQRInTerminal: true
+      syncFullHistory: false
     });
 
     sockWA.ev.on('creds.update', saveCreds);
