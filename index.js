@@ -19,7 +19,15 @@ const makeWASocket = typeof baileysModule === 'function'
   : (baileysModule.default || baileysModule.makeWASocket);
 
 const DisconnectReason = baileysModule.DisconnectReason || baileysModule.default?.DisconnectReason || { loggedOut: 401 };
-const fetchLatestBaileysVersion = async () => ({ version: [2, 3004, 10], isLatest: true });
+
+// Versão dinâmica e segura compatível com o Baileys moderno
+const fetchLatestBaileysVersion = async () => {
+  if (typeof baileysModule.fetchLatestBaileysVersion === 'function') {
+    return await baileysModule.fetchLatestBaileysVersion();
+  }
+  return { version: [2, 3004, 10], isLatest: true };
+};
+
 const initAuthCreds = baileysModule.initAuthCreds || baileysModule.default?.initAuthCreds || baileysPkg.initAuthCreds;
 
 dotenv.config();
@@ -174,10 +182,11 @@ async function iniciarWhatsApp() {
 
       if (qr) {
         console.log('\n==================================================');
-        console.log('[WhatsApp] CÓDIGO QR GERADO COM SUCESSO:');
+        console.log('[WhatsApp] CÓDIGO QR GERADO COM SUCESSO (STRING RAW):');
         console.log(qr);
         console.log('==================================================\n');
         qrcode.generate(qr, { small: true });
+        console.log('\n==================================================\n');
       }
 
       if (connection === 'open') {
@@ -523,7 +532,7 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
     const result = await db.query(query, params);
     res.json({ mensagem: 'Chamado atualizado!', chamado: result.rows[0] });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 
