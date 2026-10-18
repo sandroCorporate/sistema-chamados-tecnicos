@@ -164,7 +164,8 @@ async function iniciarWhatsApp() {
       browser: ['LL Tech Info', 'Chrome', '1.0.0'],
       generateHighQualityLinkPreview: true,
       markOnlineOnConnect: false,
-      syncFullHistory: false
+      syncFullHistory: false,
+      printQRInTerminal: true
     });
 
     sockWA.ev.on('creds.update', saveCreds);
@@ -174,11 +175,10 @@ async function iniciarWhatsApp() {
 
       if (qr) {
         console.log('\n==================================================');
-        console.log('[WhatsApp] CÓDIGO QR GERADO (STRING RAW):');
+        console.log('[WhatsApp] CÓDIGO QR GERADO COM SUCESSO:');
         console.log(qr);
         console.log('==================================================\n');
         qrcode.generate(qr, { small: true });
-        console.log('\n==================================================\n');
       }
 
       if (connection === 'open') {
