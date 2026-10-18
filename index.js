@@ -9,9 +9,8 @@ import pino from 'pino';
 import qrcode from 'qrcode-terminal';
 
 // Extração única e segura dos componentes do Baileys
-const makeWASocket = baileysPkg.default || baileysPkg.makeWASocket;
-const DisconnectReason = baileysPkg.DisconnectReason;
-const fetchLatestBaileysVersion = baileysPkg.fetchLatestBaileysVersion;
+const makeWASocket = baileysPkg.default?.makeWASocket || baileysPkg.makeWASocket;
+const DisconnectReason = baileysPkg.default?.DisconnectReason || baileysPkg.DisconnectReason;
 
 dotenv.config();
 
