@@ -18,7 +18,7 @@ const makeWASocket = typeof baileysModule === 'function'
   : (baileysModule.default || baileysModule.makeWASocket);
 
 const DisconnectReason = baileysModule.DisconnectReason || baileysModule.default?.DisconnectReason || { loggedOut: 401 };
-const fetchLatestBaileysVersion = baileysModule.fetchLatestBaileysVersion || baileysModule.default?.fetchLatestBaileysVersion || async () => ({ version: [2, 3000, 1015901307], isLatest: false });
+const fetchLatestBaileysVersion = baileysModule.fetchLatestBaileysVersion || baileysModule.default?.fetchLatestBaileysVersion || (async () => ({ version: [2, 3000, 1015901307], isLatest: false }));
 
 dotenv.config();
 
@@ -505,7 +505,7 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
     const result = await db.query(query, params);
     res.json({ mensagem: 'Chamado atualizado!', chamado: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
