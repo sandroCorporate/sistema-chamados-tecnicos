@@ -8,9 +8,12 @@ import { MercadoPagoConfig, Payment } from 'mercadopago';
 import pino from 'pino';
 import qrcode from 'qrcode-terminal';
 
-// Extração única e segura dos componentes do Baileys
-const makeWASocket = baileysPkg.default?.makeWASocket || baileysPkg.makeWASocket;
-const DisconnectReason = baileysPkg.default?.DisconnectReason || baileysPkg.DisconnectReason;
+// Extração única e totalmente segura do Baileys
+const makeWASocket = typeof baileysPkg === 'function' 
+  ? baileysPkg 
+  : (baileysPkg.default?.default || baileysPkg.default || baileysPkg.makeWASocket);
+
+const DisconnectReason = baileysPkg.DisconnectReason || baileysPkg.default?.DisconnectReason;
 
 dotenv.config();
 
