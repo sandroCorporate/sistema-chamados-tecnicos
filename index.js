@@ -7,6 +7,7 @@ import db from './db.js';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import pino from 'pino';
 import qrcode from 'qrcode-terminal';
+const { default: makeWASocket, DisconnectReason, fetchLatestBaileysVersion } = baileysPkg;
 
 // ==========================================
 // EXTRAÇÃO SEGURA DO BAILEYS (ESM COMPATIBILIDADE)
@@ -135,8 +136,8 @@ async function iniciarWhatsApp() {
     const { state, saveCreds } = await usePostgresAuthState(db);
     
     // Versão estável rigorosa para evitar rejeição do servidor do WhatsApp
-    const version = [2, 3000, 1015901307];
-    console.log(`[WhatsApp] A inicializar socket com Baileys v${version.join('.')}`);
+    const { version, isLatest } = await fetchLatestBaileysVersion();
+    console.log(`[WhatsApp] A usar versão oficial do Baileys v${version.join('.')} (É a mais recente? ${isLatest})`);
 
     sockWA = makeWASocket({
       version,
