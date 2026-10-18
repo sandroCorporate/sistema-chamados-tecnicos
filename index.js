@@ -106,7 +106,6 @@ async function usePostgresAuthState(dbClient) {
     };
   }
 
-  // Garantia absoluta de integridade das chaves públicas
   if (!creds.signedIdentityKey || !creds.signedIdentityKey.public) {
     creds.signedIdentityKey = { public: crypto.randomBytes(32), private: crypto.randomBytes(32) };
   }
@@ -501,7 +500,7 @@ app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, re
 
 app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
   try {
-    const { id] = req.params;
+    const { id } = req.params;
     const { status, valor } = req.body;
     if (String(req.usuario?.tipo).toUpperCase() === 'CLIENTE') {
       return res.status(403).json({ error: 'Acesso negado.' });
