@@ -149,7 +149,9 @@ async function iniciarWhatsApp() {
     sockWA.ev.on('connection.update', (update) => {
       const { connection, lastDisconnect, qr } = update;
 
-      // Imprime o QR Code de forma limpa na consola do Render
+      // Log de diagnóstico para inspecionar o update recebido
+      console.log('[WhatsApp Update Diagnóstico]:', JSON.stringify({ connection, lastDisconnect, hasQr: !!qr }));
+
       if (qr) {
         console.log('\n==================================================');
         console.log('[WhatsApp] ESCANEIE ESTE QR CODE COM O SEU TELEMÓVEL:');
@@ -172,15 +174,11 @@ async function iniciarWhatsApp() {
             iniciarWhatsApp();
           }, 10000);
         } else {
-          console.log('[WhatsApp] Sessão encerrada. Limpe a tabela e reinicie.');
+          console.log('[WhatsApp] Sessão encerrada.');
         }
       }
     });
-  } catch (err) {
-    console.error('[WhatsApp Init Error]:', err.message);
-  }
-}
-
+    
 // ==========================================
 // FUNÇÃO AUXILIAR: Envio de WhatsApp (Baileys)
 // ==========================================
