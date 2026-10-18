@@ -7,6 +7,7 @@ import db from './db.js';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import pino from 'pino';
 import qrcode from 'qrcode-terminal';
+import crypto from 'crypto';
 
 // ==========================================
 // EXTRAÇÃO SEGURA E COMPATÍVEL DO BAILEYS
@@ -87,14 +88,30 @@ async function usePostgresAuthState(dbClient) {
   if (storedCreds) {
     creds = storedCreds;
   } else {
-    creds = initAuthCreds ? initAuthCreds() : {
+    creds = typeof initAuthCreds === 'function' ? initAuthCreds() : {
       registrationId: Math.floor(Math.random() * 1000000),
-      advSecretKey: '',
+      noiseKey: { public: crypto.randomBytes(32), private: crypto.randomBytes(32) },
+      signedIdentityKey: { public: crypto.randomBytes(32), private: crypto.randomBytes(32) },
+      signedPreKey: {
+        keyPair: { public: crypto.randomBytes(32), private: crypto.randomBytes(32) },
+        signature: crypto.randomBytes(64),
+        keyId: 1
+      },
+      registrationState: {},
+      advSecretKey: crypto.randomBytes(32),
       processedHistoryMessages: [],
       nextPreKeyId: 1,
       firstUnuploadedPreKeyId: 1,
       accountSettings: { unarchiveChats: false }
     };
+  }
+
+  // Garantia absoluta de integridade das chaves públicas
+  if (!creds.signedIdentityKey || !creds.signedIdentityKey.public) {
+    creds.signedIdentityKey = { public: crypto.randomBytes(32), private: crypto.randomBytes(32) };
+  }
+  if (!creds.identityKey || !creds.identityKey.public) {
+    creds.identityKey = { public: crypto.randomBytes(32), private: crypto.randomBytes(32) };
   }
 
   return {
@@ -172,7 +189,6 @@ async function iniciarWhatsApp() {
         const errorMessage = error?.message || String(error);
 
         console.log(`[WhatsApp Debug] Conexão terminada. Status Code: ${statusCode || 'N/A'} | Erro completo:`, errorMessage);
-        console.log('[WhatsApp Debug] Objeto lastDisconnect completo:', JSON.stringify(lastDisconnect, null, 2));
 
         const loggedOut = statusCode === DisconnectReason.loggedOut;
 
@@ -485,7 +501,7 @@ app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, re
 
 app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id] = req.params;
     const { status, valor } = req.body;
     if (String(req.usuario?.tipo).toUpperCase() === 'CLIENTE') {
       return res.status(403).json({ error: 'Acesso negado.' });
@@ -508,7 +524,7 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
     const result = await db.query(query, params);
     res.json({ mensagem: 'Chamado atualizado!', chamado: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
