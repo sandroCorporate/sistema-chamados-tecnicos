@@ -7,16 +7,18 @@ import db from './db.js';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import pino from 'pino';
 import qrcode from 'qrcode-terminal';
-const { default: makeWASocket, DisconnectReason, fetchLatestBaileysVersion } = baileysPkg;
 
 // ==========================================
-// EXTRAÇÃO SEGURA DO BAILEYS (ESM COMPATIBILIDADE)
+// EXTRAÇÃO SEGURA E COMPATÍVEL DO BAILEYS
 // ==========================================
-const makeWASocket = typeof baileysPkg === 'function' 
-  ? baileysPkg 
-  : (baileysPkg.default?.default || baileysPkg.default || baileysPkg.makeWASocket);
+const baileysModule = baileysPkg.default || baileysPkg;
 
-const DisconnectReason = baileysPkg.DisconnectReason || baileysPkg.default?.DisconnectReason || { loggedOut: 401 };
+const makeWASocket = typeof baileysModule === 'function' 
+  ? baileysModule 
+  : (baileysModule.default || baileysModule.makeWASocket);
+
+const DisconnectReason = baileysModule.DisconnectReason || baileysModule.default?.DisconnectReason || { loggedOut: 401 };
+const fetchLatestBaileysVersion = baileysModule.fetchLatestBaileysVersion || baileysModule.default?.fetchLatestBaileysVersion || async () => ({ version: [2, 3000, 1015901307], isLatest: false });
 
 dotenv.config();
 
@@ -135,7 +137,7 @@ async function iniciarWhatsApp() {
   try {
     const { state, saveCreds } = await usePostgresAuthState(db);
     
-    // Versão estável rigorosa para evitar rejeição do servidor do WhatsApp
+    // Obtenção dinâmica da versão oficial do Baileys para evitar rejeição
     const { version, isLatest } = await fetchLatestBaileysVersion();
     console.log(`[WhatsApp] A usar versão oficial do Baileys v${version.join('.')} (É a mais recente? ${isLatest})`);
 
