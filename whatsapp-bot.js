@@ -3,15 +3,13 @@ import dotenv from 'dotenv';
 import express from 'express';
 import db from './db.js';
 import pino from 'pino';
+import qrcode from 'qrcode-terminal';
 import crypto from 'crypto';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 10000;
-
-// Insira o seu número com código do país e DDI (ex: 5592999999999)
-const PHONE_NUMBER = process.env.WHATSAPP_PHONE || "5592986040401";
 
 app.use(express.json());
 
@@ -115,61 +113,55 @@ async function usePostgresAuthState(dbClient) {
 let sockWA = null;
 async function iniciarWhatsApp() {
   try {
-    console.log('[WhatsApp Bot] A inicializar socket com suporte a Pairing Code...');
+    console.log('[WhatsApp Bot] A inicializar socket limpo...');
     const { state, saveCreds } = await usePostgresAuthState(db);
 
     sockWA = makeWASocket({
-      version: [2, 3000, 1015901307],
       auth: state,
       logger: pino({ level: 'silent' }),
-      browser: ['Chrome (Linux)', 'Chrome', '120.0.0.0'],
+      browser: ['Ubuntu', 'Chrome', '22.04.4'],
       markOnlineOnConnect: false,
       syncFullHistory: false
     });
 
     sockWA.ev.on('creds.update', saveCreds);
 
-    // Se não estiver registcado/parecido, solicita o código por número
-    if (!sockWA.authState.creds.registered) {
-      setTimeout(async () => {
-        try {
-          const code = await sockWA.requestPairingCode(PHONE_NUMBER);
-          console.log('\n==================================================');
-          console.log(`[WhatsApp Bot] CÓDIGO DE EMPARELHAMENTO GERADO: ${code}`);
-          console.log('==================================================\n');
-        } catch (err) {
-          console.error('[Pairing Error]:', err.message);
-        }
-      }, 5000);
-    }
-
     sockWA.ev.on('connection.update', (update) => {
-      const { connection, lastDisconnect } = update;
+      const { connection, lastDisconnect, qr } = update;
+
+      if (qr) {
+        console.log('\n================== QR CODE ==================');
+        console.log(qr);
+        console.log('=============================================\n');
+        try {
+          qrcode.generate(qr, { small: true });
+        } catch (e) {}
+      }
 
       if (connection === 'open') {
         console.log('[WhatsApp Bot] Conectado com sucesso ao WhatsApp!');
       } else if (connection === 'close') {
         const statusCode = lastDisconnect?.error?.output?.statusCode;
-        console.log(`[WhatsApp Bot] Conexão fechada. Código de estado: ${statusCode}`);
+        console.log(`[WhatsApp Bot] Conexão fechada. Código: ${statusCode}`);
         if (statusCode !== DisconnectReason.loggedOut) {
-          setTimeout(() => iniciarWhatsApp(), 5000);
+          setTimeout(() => iniciarWhatsApp(), 10000);
         }
       }
     });
   } catch (err) {
-    console.error('[WhatsApp Bot Init Error]:', err.message);
+    console.error('[WhatsApp Bot Error]:', err.message);
   }
 }
 
 app.post('/enviar', async (req, res) => {
   const { jid, mensagem } = req.body;
   if (!sockWA) {
-    return res.status(503).json({ error: 'Socket do WhatsApp não inicializado.' });
+    return res.status(503).json({ error: 'Socket não inicializado.' });
   }
 
   try {
     await sockWA.sendMessage(jid, { text: mensagem });
-    return res.json({ sucesso: true, mensagem: 'Mensagem enviada com sucesso.' });
+    return res.json({ sucesso: true });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
