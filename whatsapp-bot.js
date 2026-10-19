@@ -9,14 +9,13 @@ import crypto from 'crypto';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 10000;
 
 app.use(express.json());
 
 const baileysModule = baileysPkg.default || baileysPkg;
 const makeWASocket = typeof baileysModule === 'function' ? baileysModule : (baileysModule.default || baileysModule.makeWASocket);
 const DisconnectReason = baileysModule.DisconnectReason || baileysModule.default?.DisconnectReason || { loggedOut: 401 };
-const initAuthCreds = baileysModule.initAuthCreds || baileysModule.default?.initAuthCreds || baileysPkg.initAuthCreds;
 
 const fetchLatestBaileysVersion = async () => {
   if (typeof baileysModule.fetchLatestBaileysVersion === 'function') {
@@ -74,6 +73,7 @@ async function usePostgresAuthState(dbClient) {
   if (storedCreds) {
     creds = storedCreds;
   } else {
+    const initAuthCreds = baileysModule.initAuthCreds || baileysModule.default?.initAuthCreds || baileysPkg.initAuthCreds;
     creds = typeof initAuthCreds === 'function' ? initAuthCreds() : {
       registrationId: Math.floor(Math.random() * 1000000),
       noiseKey: { public: crypto.randomBytes(32), private: crypto.randomBytes(32) },
@@ -123,6 +123,7 @@ async function usePostgresAuthState(dbClient) {
 let sockWA = null;
 async function iniciarWhatsApp() {
   try {
+    console.log('[WhatsApp Bot] A inicializar o socket do Baileys...');
     const { state, saveCreds } = await usePostgresAuthState(db);
     const { version } = await fetchLatestBaileysVersion();
 
@@ -141,14 +142,18 @@ async function iniciarWhatsApp() {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
-        console.log('\n[WhatsApp Bot] QR CODE GERADO COM SUCESSO:');
+        console.log('\n==================================================');
+        console.log('[WhatsApp Bot] NOVO QR CODE GERADO:');
+        console.log(qr);
+        console.log('==================================================\n');
         qrcode.generate(qr, { small: true });
       }
 
       if (connection === 'open') {
-        console.log('[WhatsApp Bot] Conectado com sucesso!');
+        console.log('[WhatsApp Bot] Conectado com sucesso ao WhatsApp!');
       } else if (connection === 'close') {
         const statusCode = lastDisconnect?.error?.output?.statusCode;
+        console.log(`[WhatsApp Bot] Conexão fechada. Código de estado: ${statusCode}`);
         if (statusCode !== DisconnectReason.loggedOut) {
           setTimeout(() => iniciarWhatsApp(), 5000);
         }
@@ -175,6 +180,6 @@ app.post('/enviar', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Microserviço do WhatsApp rodando na porta ${PORT}`);
+  console.log(`Microserviço do WhatsApp a rodar na porta ${PORT}`);
   iniciarWhatsApp();
 });
