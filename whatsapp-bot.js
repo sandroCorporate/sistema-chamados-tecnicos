@@ -1,10 +1,5 @@
-import baileysPkg from '@whiskeysockets/baileys';
 import dotenv from 'dotenv';
 import express from 'express';
-import db from './db.js';
-import pino from 'pino';
-import qrcode from 'qrcode-terminal';
-import crypto from 'crypto';
 
 dotenv.config();
 
@@ -13,161 +8,52 @@ const PORT = process.env.PORT || 10000;
 
 app.use(express.json());
 
-const baileysModule = baileysPkg.default || baileysPkg;
-const makeWASocket = typeof baileysModule === 'function' ? baileysModule : (baileysModule.default || baileysModule.makeWASocket);
-const DisconnectReason = baileysModule.DisconnectReason || baileysModule.default?.DisconnectReason || { loggedOut: 401 };
+const WA_API_URL = process.env.WA_API_URL;
+const WA_API_KEY = process.env.WA_API_KEY;
 
-async function usePostgresAuthState(dbClient) {
-  await dbClient.query(`
-    CREATE TABLE IF NOT EXISTS whatsapp_auth (
-      key TEXT PRIMARY KEY,
-      value TEXT
-    );
-  `);
+// Rota de teste para verificar se o microserviço está online
+app.get('/', (req, res) => {
+  res.json({ status: 'Microserviço de WhatsApp operacional via Gateway Externo' });
+});
 
-  const writeData = async (data, key) => {
-    const serialized = JSON.stringify(data, (k, v) => Buffer.isBuffer(v) ? { type: 'Buffer', data: v.toString('base64') } : v);
-    await dbClient.query(
-      `INSERT INTO whatsapp_auth (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
-      [key, serialized]
-    );
-  };
-
-  const readData = async (key) => {
-    try {
-      const { rows } = await dbClient.query('SELECT value FROM whatsapp_auth WHERE key = \$1', [key]);
-      if (rows.length === 0) return null;
-      return JSON.parse(rows[0].value, (k, v) => {
-        if (v !== null && typeof v === 'object' && v.type === 'Buffer' && Array.isArray(v.data)) {
-          return Buffer.from(v.data);
-        }
-        if (v !== null && typeof v === 'object' && v.type === 'Buffer' && typeof v.data === 'string') {
-          return Buffer.from(v.data, 'base64');
-        }
-        return v;
-      });
-    } catch (error) {
-      return null;
-    }
-  };
-
-  const removeData = async (key) => {
-    try {
-      await dbClient.query('DELETE FROM whatsapp_auth WHERE key = \$1', [key]);
-    } catch (error) {}
-  };
-
-  let creds;
-  const storedCreds = await readData('creds');
-  
-  if (storedCreds) {
-    creds = storedCreds;
-  } else {
-    const initAuthCreds = baileysModule.initAuthCreds || baileysModule.default?.initAuthCreds || baileysPkg.initAuthCreds;
-    creds = typeof initAuthCreds === 'function' ? initAuthCreds() : {
-      registrationId: Math.floor(Math.random() * 1000000),
-      noiseKey: { public: crypto.randomBytes(32), private: crypto.randomBytes(32) },
-      signedIdentityKey: { public: crypto.randomBytes(32), private: crypto.randomBytes(32) },
-      signedPreKey: {
-        keyPair: { public: crypto.randomBytes(32), private: crypto.randomBytes(32) },
-        signature: crypto.randomBytes(64),
-        keyId: 1
-      },
-      registrationState: {},
-      advSecretKey: crypto.randomBytes(32),
-      processedHistoryMessages: [],
-      nextPreKeyId: 1,
-      firstUnuploadedPreKeyId: 1,
-      accountSettings: { unarchiveChats: false }
-    };
-  }
-
-  return {
-    state: {
-      creds,
-      keys: {
-        get: async (type, ids) => {
-          const data = {};
-          for (const id of ids) {
-            const value = await readData(`${type}-${id}`);
-            if (value) data[id] = value;
-          }
-          return data;
-        },
-        set: async (data) => {
-          for (const category of Object.keys(data)) {
-            for (const id of Object.keys(data[category])) {
-              const value = data[category][id];
-              const key = `${category}-${id}`;
-              if (value) await writeData(value, key);
-              else await removeData(key);
-            }
-          }
-        }
-      }
-    },
-    saveCreds: () => writeData(creds, 'creds')
-  };
-}
-
-let sockWA = null;
-async function iniciarWhatsApp() {
-  try {
-    console.log('[WhatsApp Bot] A inicializar socket limpo...');
-    const { state, saveCreds } = await usePostgresAuthState(db);
-
-    sockWA = makeWASocket({
-      auth: state,
-      logger: pino({ level: 'silent' }),
-      browser: ['Ubuntu', 'Chrome', '22.04.4'],
-      markOnlineOnConnect: false,
-      syncFullHistory: false
-    });
-
-    sockWA.ev.on('creds.update', saveCreds);
-
-    sockWA.ev.on('connection.update', (update) => {
-      const { connection, lastDisconnect, qr } = update;
-
-      if (qr) {
-        console.log('\n================== QR CODE ==================');
-        console.log(qr);
-        console.log('=============================================\n');
-        try {
-          qrcode.generate(qr, { small: true });
-        } catch (e) {}
-      }
-
-      if (connection === 'open') {
-        console.log('[WhatsApp Bot] Conectado com sucesso ao WhatsApp!');
-      } else if (connection === 'close') {
-        const statusCode = lastDisconnect?.error?.output?.statusCode;
-        console.log(`[WhatsApp Bot] Conexão fechada. Código: ${statusCode}`);
-        if (statusCode !== DisconnectReason.loggedOut) {
-          setTimeout(() => iniciarWhatsApp(), 10000);
-        }
-      }
-    });
-  } catch (err) {
-    console.error('[WhatsApp Bot Error]:', err.message);
-  }
-}
-
+// Rota principal para receber pedidos de envio da API do site
 app.post('/enviar', async (req, res) => {
   const { jid, mensagem } = req.body;
-  if (!sockWA) {
-    return res.status(503).json({ error: 'Socket não inicializado.' });
+  
+  if (!WA_API_URL) {
+    return res.status(500).json({ error: 'WA_API_URL não configurada nas variáveis de ambiente.' });
   }
 
   try {
-    await sockWA.sendMessage(jid, { text: mensagem });
-    return res.json({ sucesso: true });
+    // Formata o número a partir do JID (remove o sufixo do WhatsApp)
+    const phone = jid ? jid.replace('@s.whatsapp.net', '').replace('@g.us', '') : '';
+
+    // Disparo para a API externa configurada (ex: Z-API)
+    const response = await fetch(WA_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(WA_API_KEY ? { 'Client-Token': WA_API_KEY } : {})
+      },
+      body: JSON.stringify({
+        phone: phone,
+        message: mensagem
+      })
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Erro ao enviar mensagem pela API externa.');
+    }
+
+    return res.json({ sucesso: true, resultado: data });
   } catch (error) {
+    console.error('[Erro no envio de WhatsApp]:', error.message);
     return res.status(500).json({ error: error.message });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Microserviço a rodar na porta ${PORT}`);
-  iniciarWhatsApp();
+  console.log(`Microserviço do WhatsApp a rodar na porta ${PORT}`);
 });
