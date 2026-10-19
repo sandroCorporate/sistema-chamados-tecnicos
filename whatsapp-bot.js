@@ -3,7 +3,6 @@ import dotenv from 'dotenv';
 import express from 'express';
 import db from './db.js';
 import pino from 'pino';
-import qrcode from 'qrcode-terminal';
 import crypto from 'crypto';
 
 dotenv.config();
@@ -11,15 +10,15 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 10000;
 
+// Insira o seu número com código do país e DDI (ex: 5592999999999)
+const PHONE_NUMBER = process.env.WHATSAPP_PHONE || "5592986040401";
+
 app.use(express.json());
 
 const baileysModule = baileysPkg.default || baileysPkg;
 const makeWASocket = typeof baileysModule === 'function' ? baileysModule : (baileysModule.default || baileysModule.makeWASocket);
 const DisconnectReason = baileysModule.DisconnectReason || baileysModule.default?.DisconnectReason || { loggedOut: 401 };
 
-// ==========================================
-// ADAPTADOR DE AUTENTICAÇÃO NO POSTGRES (NEON)
-// ==========================================
 async function usePostgresAuthState(dbClient) {
   await dbClient.query(`
     CREATE TABLE IF NOT EXISTS whatsapp_auth (
@@ -116,33 +115,36 @@ async function usePostgresAuthState(dbClient) {
 let sockWA = null;
 async function iniciarWhatsApp() {
   try {
-    console.log('[WhatsApp Bot] A inicializar o socket do Baileys com versão fixa...');
+    console.log('[WhatsApp Bot] A inicializar socket com suporte a Pairing Code...');
     const { state, saveCreds } = await usePostgresAuthState(db);
 
     sockWA = makeWASocket({
-      version: [2, 3000, 1015901307], // Versão fixa estável para evitar rejeição de handshake
+      version: [2, 3000, 1015901307],
       auth: state,
       logger: pino({ level: 'silent' }),
-      browser: ['Ubuntu', 'Chrome', '22.04.4'],
+      browser: ['Chrome (Linux)', 'Chrome', '120.0.0.0'],
       markOnlineOnConnect: false,
-      syncFullHistory: false,
-      connectTimeoutMs: 60000,
-      defaultQueryTimeoutMs: 60000,
-      keepAliveIntervalMs: 10000
+      syncFullHistory: false
     });
 
     sockWA.ev.on('creds.update', saveCreds);
 
-    sockWA.ev.on('connection.update', (update) => {
-      const { connection, lastDisconnect, qr } = update;
+    // Se não estiver registcado/parecido, solicita o código por número
+    if (!sockWA.authState.creds.registered) {
+      setTimeout(async () => {
+        try {
+          const code = await sockWA.requestPairingCode(PHONE_NUMBER);
+          console.log('\n==================================================');
+          console.log(`[WhatsApp Bot] CÓDIGO DE EMPARELHAMENTO GERADO: ${code}`);
+          console.log('==================================================\n');
+        } catch (err) {
+          console.error('[Pairing Error]:', err.message);
+        }
+      }, 5000);
+    }
 
-      if (qr) {
-        console.log('\n==================================================');
-        console.log('[WhatsApp Bot] QR CODE GERADO COM SUCESSO:');
-        console.log(qr);
-        console.log('==================================================\n');
-        qrcode.generate(qr, { small: true });
-      }
+    sockWA.ev.on('connection.update', (update) => {
+      const { connection, lastDisconnect } = update;
 
       if (connection === 'open') {
         console.log('[WhatsApp Bot] Conectado com sucesso ao WhatsApp!');
@@ -159,11 +161,10 @@ async function iniciarWhatsApp() {
   }
 }
 
-// Rota interna para receber pedidos de envio da API principal
 app.post('/enviar', async (req, res) => {
   const { jid, mensagem } = req.body;
   if (!sockWA) {
-    return res.status(503).json({ error: 'Socket do WhatsApp ainda não inicializado.' });
+    return res.status(503).json({ error: 'Socket do WhatsApp não inicializado.' });
   }
 
   try {
@@ -175,6 +176,6 @@ app.post('/enviar', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Microserviço do WhatsApp a rodar na porta ${PORT}`);
+  console.log(`Microserviço a rodar na porta ${PORT}`);
   iniciarWhatsApp();
 });
