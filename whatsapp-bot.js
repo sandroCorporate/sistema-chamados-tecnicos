@@ -17,13 +17,6 @@ const baileysModule = baileysPkg.default || baileysPkg;
 const makeWASocket = typeof baileysModule === 'function' ? baileysModule : (baileysModule.default || baileysModule.makeWASocket);
 const DisconnectReason = baileysModule.DisconnectReason || baileysModule.default?.DisconnectReason || { loggedOut: 401 };
 
-const fetchLatestBaileysVersion = async () => {
-  if (typeof baileysModule.fetchLatestBaileysVersion === 'function') {
-    return await baileysModule.fetchLatestBaileysVersion();
-  }
-  return { version: [2, 3004, 10], isLatest: true };
-};
-
 // ==========================================
 // ADAPTADOR DE AUTENTICAÇÃO NO POSTGRES (NEON)
 // ==========================================
@@ -123,17 +116,19 @@ async function usePostgresAuthState(dbClient) {
 let sockWA = null;
 async function iniciarWhatsApp() {
   try {
-    console.log('[WhatsApp Bot] A inicializar o socket do Baileys...');
+    console.log('[WhatsApp Bot] A inicializar o socket do Baileys com versão fixa...');
     const { state, saveCreds } = await usePostgresAuthState(db);
-    const { version } = await fetchLatestBaileysVersion();
 
     sockWA = makeWASocket({
-      version,
+      version: [2, 3000, 1015901307], // Versão fixa estável para evitar rejeição de handshake
       auth: state,
       logger: pino({ level: 'silent' }),
-      browser: ['LL Tech Info Bot', 'Chrome', '1.0.0'],
+      browser: ['Ubuntu', 'Chrome', '22.04.4'],
       markOnlineOnConnect: false,
-      syncFullHistory: false
+      syncFullHistory: false,
+      connectTimeoutMs: 60000,
+      defaultQueryTimeoutMs: 60000,
+      keepAliveIntervalMs: 10000
     });
 
     sockWA.ev.on('creds.update', saveCreds);
@@ -143,7 +138,7 @@ async function iniciarWhatsApp() {
 
       if (qr) {
         console.log('\n==================================================');
-        console.log('[WhatsApp Bot] NOVO QR CODE GERADO:');
+        console.log('[WhatsApp Bot] QR CODE GERADO COM SUCESSO:');
         console.log(qr);
         console.log('==================================================\n');
         qrcode.generate(qr, { small: true });
