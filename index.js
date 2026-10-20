@@ -11,7 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'chave_secreta_super_segura';
 
-// URL do microserviço de WhatsApp dedicado (ex: alojado noutra plataforma ou serviço)
+// URL do microserviço de WhatsApp dedicado (bridge local)
 const WHATSAPP_SERVICE_URL = process.env.WHATSAPP_SERVICE_URL || 'http://localhost:3001';
 
 // Token real do Mercado Pago integrado
@@ -79,7 +79,7 @@ function autenticarToken(req, res, next) {
 }
 
 // ==========================================
-// ROTAS DO SISTEMA (Preservadas na Íntegra)
+// ROTAS DO SISTEMA
 // ==========================================
 app.get('/', (req, res) => {
   res.sendFile(process.cwd() + '/index.html');
@@ -322,12 +322,27 @@ app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, re
   }
 });
 
+// ==========================================
+// ROTA PATCH: Atualização de Chamados (Ajustada)
+// ==========================================
 app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { status, valor } = req.body;
+    
     if (String(req.usuario?.tipo).toUpperCase() === 'CLIENTE') {
       return res.status(403).json({ error: 'Acesso negado.' });
+    }
+
+    // 1. Bloqueio de edição para chamados já concluídos
+    const chamadoAtualRes = await db.query('SELECT * FROM chamados WHERE id = \$1', [id]);
+    if (chamadoAtualRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Chamado não encontrado.' });
+    }
+    const chamadoAtual = chamadoAtualRes.rows[0];
+
+    if (String(chamadoAtual.status).toUpperCase() === 'CONCLUÍDO') {
+      return res.status(400).json({ error: 'Este chamado já está concluído e não pode ser editado.' });
     }
 
     try { await db.query('ALTER TABLE chamados ADD COLUMN IF NOT EXISTS valor NUMERIC(10,2) DEFAULT 0.00;'); } catch (e) {}
@@ -345,7 +360,25 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
     }
 
     const result = await db.query(query, params);
-    res.json({ mensagem: 'Chamado atualizado!', chamado: result.rows[0] });
+    const chamadoAtualizado = result.rows[0];
+
+    // 2. Disparo de notificação no WhatsApp ao concluir o chamado
+    if (status && String(status).toUpperCase() === 'CONCLUÍDO') {
+      const userId = chamadoAtualizado.usuario_id || chamadoAtualizado.cliente_id || chamadoAtualizado.usuarioid;
+      const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = \$1', [userId]);
+      const cliente = userRes.rows[0];
+
+      if (cliente && cliente.telefone) {
+        const msgConclusao = `🖥️ *LL TECH INFO - ATENDIMENTO CONCLUÍDO*
+----------------------------------------
+Olá, *${cliente.nome}*!
+O seu chamado *#${String(chamadoAtualizado.id).substring(0, 8)}* foi concluído com sucesso.
+🟢 *Status:* CONCLUÍDO`;
+        enviarNotificacaoWhatsApp(cliente.telefone, msgConclusao);
+      }
+    }
+
+    res.json({ mensagem: 'Chamado atualizado com sucesso!', chamado: chamadoAtualizado });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
