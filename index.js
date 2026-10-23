@@ -142,6 +142,46 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// ==========================================
+// ROTA: Trocar Senha (Restrita a Técnicos)
+// ==========================================
+app.post('/api/usuarios/:id/trocar-senha', autenticarToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { novaSenha } = req.body;
+
+    const tipoUsuario = String(req.usuario?.tipo || '').toUpperCase();
+
+    // Validação estricta: Apenas técnicos podem executar esta ação
+    if (tipoUsuario === 'CLIENTE') {
+      return res.status(403).json({ error: 'Acesso negado. Apenas técnicos podem alterar senhas.' });
+    }
+
+    if (!novaSenha || novaSenha.trim() === '') {
+      return res.status(400).json({ error: 'A nova senha deve ser informada.' });
+    }
+
+    // Verificar se o utilizador alvo existe
+    const userCheck = await db.query('SELECT * FROM usuarios WHERE id = $1', [id]);
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Utilizador não encontrado.' });
+    }
+
+    // Gerar o hash da nova senha
+    const novoHash = await bcrypt.hash(novaSenha, 10);
+
+    // Atualizar na base de dados (atualiza ambas as colunas por segurança de compatibilidade)
+    await db.query(
+      'UPDATE usuarios SET senha = $1, senha_hash = $1 WHERE id = $2',
+      [novoHash, id]
+    );
+
+    return res.json({ mensagem: 'Senha alterada com sucesso pelo técnico!' });
+  } catch (error) {
+    return res.status(500).json({ error: 'Erro ao alterar senha: ' + error.message });
+  }
+});
+
 app.get('/api/chamados', autenticarToken, async (req, res) => {
   try {
     const tipoUsuario = String(req.usuario.tipo || '').toUpperCase();
@@ -323,7 +363,7 @@ app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, re
 });
 
 // ==========================================
-// ROTA PATCH: Atualização de Chamados (Ajustada)
+// ROTA PATCH: Atualização de Chamados
 // ==========================================
 app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
   try {
