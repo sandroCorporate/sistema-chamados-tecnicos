@@ -152,7 +152,6 @@ app.post('/api/usuarios/:id/trocar-senha', autenticarToken, async (req, res) => 
 
     const tipoUsuario = String(req.usuario?.tipo || '').toUpperCase();
 
-    // Validação estricta: Apenas técnicos podem executar esta ação
     if (tipoUsuario === 'CLIENTE') {
       return res.status(403).json({ error: 'Acesso negado. Apenas técnicos podem alterar senhas.' });
     }
@@ -161,16 +160,13 @@ app.post('/api/usuarios/:id/trocar-senha', autenticarToken, async (req, res) => 
       return res.status(400).json({ error: 'A nova senha deve ser informada.' });
     }
 
-    // Verificar se o utilizador alvo existe
     const userCheck = await db.query('SELECT * FROM usuarios WHERE id = $1', [id]);
     if (userCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Utilizador não encontrado.' });
     }
 
-    // Gerar o hash da nova senha
     const novoHash = await bcrypt.hash(novaSenha, 10);
 
-    // Atualizar na base de dados (atualiza ambas as colunas por segurança de compatibilidade)
     await db.query(
       'UPDATE usuarios SET senha = $1, senha_hash = $1 WHERE id = $2',
       [novoHash, id]
@@ -372,39 +368,33 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
     
     const tipoUsuario = String(req.usuario?.tipo || '').toUpperCase();
 
-    // 1. Buscar chamado atual
     const chamadoAtualRes = await db.query('SELECT * FROM chamados WHERE id = $1', [id]);
     if (chamadoAtualRes.rows.length === 0) {
       return res.status(404).json({ error: 'Chamado não encontrado.' });
     }
     const chamadoAtual = chamadoAtualRes.rows[0];
 
-    // 2. Validações específicas para CLIENTE
     if (tipoUsuario === 'CLIENTE') {
       const donoId = chamadoAtual.usuario_id || chamadoAtual.cliente_id || chamadoAtual.usuarioid;
       if (donoId !== req.usuario.id) {
         return res.status(403).json({ error: 'Acesso negado.' });
       }
       
-      // Cliente só pode editar se o status for ABERTO
       if (String(chamadoAtual.status).toUpperCase() !== 'ABERTO') {
         return res.status(400).json({ error: 'Este chamado já não está aberto e não pode ser editado.' });
       }
 
-      // Cliente NÃO pode alterar status ou valor
       if (status !== undefined || valor !== undefined) {
         return res.status(403).json({ error: 'Clientes não podem alterar o status ou valor do chamado.' });
       }
     }
 
-    // 3. Bloqueio geral de edição para chamados já concluídos
     if (String(chamadoAtual.status).toUpperCase() === 'CONCLUÍDO') {
       return res.status(400).json({ error: 'Este chamado já está concluído e não pode ser editado.' });
     }
 
     try { await db.query('ALTER TABLE chamados ADD COLUMN IF NOT EXISTS valor NUMERIC(10,2) DEFAULT 0.00;'); } catch (e) {}
 
-    // 4. Construção dinâmica da query de update
     let campos = [];
     let params = [];
     let idx = 1;
@@ -416,7 +406,6 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
         return res.status(400).json({ error: 'Nenhum campo válido fornecido para atualização.' });
       }
     } else {
-      // Técnico / Admin pode atualizar status, valor, título e descrição
       if (status !== undefined) { campos.push(`status = $${idx++}`); params.push(status); }
       if (valor !== undefined) { campos.push(`valor = $${idx++}`); params.push(valor); }
       if (titulo !== undefined) { campos.push(`titulo = $${idx++}`); params.push(titulo); }
@@ -429,7 +418,6 @@ app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
     const result = await db.query(query, params);
     const chamadoAtualizado = result.rows[0];
 
-    // 5. Disparo de notificação no WhatsApp ao concluir o chamado
     if (status && String(status).toUpperCase() === 'CONCLUÍDO') {
       const userId = chamadoAtualizado.usuario_id || chamadoAtualizado.cliente_id || chamadoAtualizado.usuarioid;
       const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = $1', [userId]);
