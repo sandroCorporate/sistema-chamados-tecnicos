@@ -117,7 +117,7 @@ app.post('/api/registro', async (req, res) => {
 app.post('/api/login', async (req, res) => {
   try {
     const { email, senha } = req.body;
-    const { rows } = await db.query('SELECT * FROM usuarios WHERE email = \$1', [email]);
+    const { rows } = await db.query('SELECT * FROM usuarios WHERE email = $1', [email]);
     if (rows.length === 0) {
       return res.status(401).json({ error: 'Credenciais inválidas.' });
     }
@@ -152,14 +152,14 @@ app.get('/api/chamados', autenticarToken, async (req, res) => {
 
     let rows;
     try {
-      const resQuery = await db.query('SELECT * FROM chamados WHERE usuario_id = \$1 ORDER BY criado_em DESC', [req.usuario.id]);
+      const resQuery = await db.query('SELECT * FROM chamados WHERE usuario_id = $1 ORDER BY criado_em DESC', [req.usuario.id]);
       rows = resQuery.rows;
     } catch (err1) {
       try {
-        const resQuery = await db.query('SELECT * FROM chamados WHERE cliente_id = \$1 ORDER BY criado_em DESC', [req.usuario.id]);
+        const resQuery = await db.query('SELECT * FROM chamados WHERE cliente_id = $1 ORDER BY criado_em DESC', [req.usuario.id]);
         rows = resQuery.rows;
       } catch (err2) {
-        const resQuery = await db.query('SELECT * FROM chamados WHERE usuarioid = \$1 ORDER BY criado_em DESC', [req.usuario.id]);
+        const resQuery = await db.query('SELECT * FROM chamados WHERE usuarioid = $1 ORDER BY criado_em DESC', [req.usuario.id]);
         rows = resQuery.rows;
       }
     }
@@ -181,18 +181,18 @@ app.post('/api/chamados', autenticarToken, async (req, res) => {
     let result;
     try {
       result = await db.query(
-        'INSERT INTO chamados (titulo, descricao, usuario_id, status, etiqueta_foto) VALUES (\$1, \$2, \$3, \$4, \$5) RETURNING *',
+        'INSERT INTO chamados (titulo, descricao, usuario_id, status, etiqueta_foto) VALUES ($1, $2, $3, $4, $5) RETURNING *',
         [titulo, descricao, req.usuario.id, 'ABERTO', etiqueta_foto || null]
       );
     } catch (err1) {
       result = await db.query(
-        'INSERT INTO chamados (titulo, descricao, cliente_id, status, etiqueta_foto) VALUES (\$1, \$2, \$3, \$4, \$5) RETURNING *',
+        'INSERT INTO chamados (titulo, descricao, cliente_id, status, etiqueta_foto) VALUES ($1, $2, $3, $4, $5) RETURNING *',
         [titulo, descricao, req.usuario.id, 'ABERTO', etiqueta_foto || null]
       );
     }
 
     const chamadoId = result.rows[0].id;
-    const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = \$1', [req.usuario.id]);
+    const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = $1', [req.usuario.id]);
     const cliente = userRes.rows[0];
 
     if (cliente && cliente.telefone) {
@@ -217,11 +217,11 @@ app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
     const { id } = req.params;
     const { valor } = req.body;
 
-    const chamadoRes = await db.query('SELECT * FROM chamados WHERE id = \$1', [id]);
+    const chamadoRes = await db.query('SELECT * FROM chamados WHERE id = $1', [id]);
     if (chamadoRes.rows.length === 0) return res.status(404).json({ error: 'Chamado não encontrado.' });
     const chamado = chamadoRes.rows[0];
 
-    const userRes = await db.query('SELECT nome, email, telefone, documento FROM usuarios WHERE id = \$1', [req.usuario.id]);
+    const userRes = await db.query('SELECT nome, email, telefone, documento FROM usuarios WHERE id = $1', [req.usuario.id]);
     const cliente = userRes.rows[0] || {};
 
     let docLimpo = cliente.documento ? cliente.documento.replace(/\D/g, '') : '00000000000';
@@ -247,7 +247,7 @@ app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
     const pagamentoId = response?.id;
 
     await db.query(
-      'UPDATE chamados SET status = \$1, valor = \$2, pagamento_id = \$3 WHERE id = \$4',
+      'UPDATE chamados SET status = $1, valor = $2, pagamento_id = $3 WHERE id = $4',
       ['AGUARDANDO PAGAMENTO', valor, String(pagamentoId), id]
     );
 
@@ -278,14 +278,14 @@ app.post('/api/webhook/mercadopago', async (req, res) => {
 
       if (paymentInfo && paymentInfo.status === 'approved') {
         const updateRes = await db.query(
-          "UPDATE chamados SET status = 'EM ATENDIMENTO' WHERE pagamento_id = \$1 RETURNING *",
+          "UPDATE chamados SET status = 'EM ATENDIMENTO' WHERE pagamento_id = $1 RETURNING *",
           [String(paymentId)]
         );
 
         if (updateRes.rows.length > 0) {
           const ch = updateRes.rows[0];
           const userId = ch.usuario_id || ch.cliente_id || ch.usuarioid;
-          const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = \$1', [userId]);
+          const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = $1', [userId]);
           const cliente = userRes.rows[0];
 
           if (cliente && cliente.telefone) {
@@ -304,7 +304,7 @@ O pagamento do chamado *#${String(ch.id).substring(0, 8)}* foi confirmado! Statu
 app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const chamadoRes = await db.query('SELECT * FROM chamados WHERE id = \$1', [id]);
+    const chamadoRes = await db.query('SELECT * FROM chamados WHERE id = $1', [id]);
     if (chamadoRes.rows.length === 0) return res.status(404).json({ error: 'Chamado não encontrado.' });
     const chamado = chamadoRes.rows[0];
 
@@ -312,7 +312,7 @@ app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, re
       const payment = new Payment(mpClient);
       const paymentInfo = await payment.get({ id: chamado.pagamento_id });
       if (paymentInfo && paymentInfo.status === 'approved') {
-        await db.query("UPDATE chamados SET status = 'EM ATENDIMENTO' WHERE id = \$1", [id]);
+        await db.query("UPDATE chamados SET status = 'EM ATENDIMENTO' WHERE id = $1", [id]);
         return res.json({ status: 'EM ATENDIMENTO', pago: true });
       }
     }
@@ -328,44 +328,71 @@ app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, re
 app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, valor } = req.body;
+    const { status, valor, titulo, descricao } = req.body;
     
-    if (String(req.usuario?.tipo).toUpperCase() === 'CLIENTE') {
-      return res.status(403).json({ error: 'Acesso negado.' });
-    }
+    const tipoUsuario = String(req.usuario?.tipo || '').toUpperCase();
 
-    // 1. Bloqueio de edição para chamados já concluídos
-    const chamadoAtualRes = await db.query('SELECT * FROM chamados WHERE id = \$1', [id]);
+    // 1. Buscar chamado atual
+    const chamadoAtualRes = await db.query('SELECT * FROM chamados WHERE id = $1', [id]);
     if (chamadoAtualRes.rows.length === 0) {
       return res.status(404).json({ error: 'Chamado não encontrado.' });
     }
     const chamadoAtual = chamadoAtualRes.rows[0];
 
+    // 2. Validações específicas para CLIENTE
+    if (tipoUsuario === 'CLIENTE') {
+      const donoId = chamadoAtual.usuario_id || chamadoAtual.cliente_id || chamadoAtual.usuarioid;
+      if (donoId !== req.usuario.id) {
+        return res.status(403).json({ error: 'Acesso negado.' });
+      }
+      
+      // Cliente só pode editar se o status for ABERTO
+      if (String(chamadoAtual.status).toUpperCase() !== 'ABERTO') {
+        return res.status(400).json({ error: 'Este chamado já não está aberto e não pode ser editado.' });
+      }
+
+      // Cliente NÃO pode alterar status ou valor
+      if (status !== undefined || valor !== undefined) {
+        return res.status(403).json({ error: 'Clientes não podem alterar o status ou valor do chamado.' });
+      }
+    }
+
+    // 3. Bloqueio geral de edição para chamados já concluídos
     if (String(chamadoAtual.status).toUpperCase() === 'CONCLUÍDO') {
       return res.status(400).json({ error: 'Este chamado já está concluído e não pode ser editado.' });
     }
 
     try { await db.query('ALTER TABLE chamados ADD COLUMN IF NOT EXISTS valor NUMERIC(10,2) DEFAULT 0.00;'); } catch (e) {}
 
-    let query, params;
-    if (valor !== undefined && status !== undefined) {
-      query = 'UPDATE chamados SET status = \$1, valor = \$2 WHERE id = \$3 RETURNING *';
-      params = [status, valor, id];
-    } else if (status !== undefined) {
-      query = 'UPDATE chamados SET status = \$1 WHERE id = \$2 RETURNING *';
-      params = [status, id];
+    // 4. Construção dinâmica da query de update
+    let campos = [];
+    let params = [];
+    let idx = 1;
+
+    if (tipoUsuario === 'CLIENTE') {
+      if (titulo !== undefined) { campos.push(`titulo = $${idx++}`); params.push(titulo); }
+      if (descricao !== undefined) { campos.push(`descricao = $${idx++}`); params.push(descricao); }
+      if (campos.length === 0) {
+        return res.status(400).json({ error: 'Nenhum campo válido fornecido para atualização.' });
+      }
     } else {
-      query = 'UPDATE chamados SET valor = \$1 WHERE id = \$2 RETURNING *';
-      params = [valor, id];
+      // Técnico / Admin pode atualizar status, valor, título e descrição
+      if (status !== undefined) { campos.push(`status = $${idx++}`); params.push(status); }
+      if (valor !== undefined) { campos.push(`valor = $${idx++}`); params.push(valor); }
+      if (titulo !== undefined) { campos.push(`titulo = $${idx++}`); params.push(titulo); }
+      if (descricao !== undefined) { campos.push(`descricao = $${idx++}`); params.push(descricao); }
     }
+
+    params.push(id);
+    const query = `UPDATE chamados SET ${campos.join(', ')} WHERE id = $${idx} RETURNING *`;
 
     const result = await db.query(query, params);
     const chamadoAtualizado = result.rows[0];
 
-    // 2. Disparo de notificação no WhatsApp ao concluir o chamado
+    // 5. Disparo de notificação no WhatsApp ao concluir o chamado
     if (status && String(status).toUpperCase() === 'CONCLUÍDO') {
       const userId = chamadoAtualizado.usuario_id || chamadoAtualizado.cliente_id || chamadoAtualizado.usuarioid;
-      const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = \$1', [userId]);
+      const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = $1', [userId]);
       const cliente = userRes.rows[0];
 
       if (cliente && cliente.telefone) {
