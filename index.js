@@ -359,9 +359,9 @@ app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, re
 });
 
 // ==========================================
-// ROTA PATCH: Atualização de Chamados
+// FUNÇÃO CENTRALIZADA: Lógica de Atualização de Chamados (PATCH)
 // ==========================================
-app.patch('/api/chamados/:id', autenticarToken, async (req, res) => {
+async function processarAtualizacaoChamado(req, res) {
   try {
     const { id } = req.params;
     const { status, valor, titulo, descricao } = req.body;
@@ -433,11 +433,15 @@ O seu chamado *#${String(chamadoAtualizado.id).substring(0, 8)}* foi concluído 
       }
     }
 
-    res.json({ mensagem: 'Chamado atualizado com sucesso!', chamado: chamadoAtualizado });
+    return res.json({ mensagem: 'Chamado atualizado com sucesso!', chamado: chamadoAtualizado });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
-});
+}
+
+// Registamos ambas as rotas (com e sem /api/) para garantir que nunca ocorra erro 404/HTML
+app.patch('/api/chamados/:id', autenticarToken, processarAtualizacaoChamado);
+app.patch('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 
 // ==========================================
 // INICIALIZAÇÃO DA API PRINCIPAL
