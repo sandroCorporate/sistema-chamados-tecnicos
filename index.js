@@ -65,7 +65,12 @@ function autenticarToken(req, res, next) {
   console.log(`[DEBUG REQ] ${req.method} ${req.originalUrl}`);
   
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  let token = authHeader && authHeader.split(' ')[1];
+
+  // Salvaguarda extra: se não vier no header, tenta apanhar nos query params ou cookies se aplicável
+  if (!token && req.query && req.query.token) {
+    token = req.query.token;
+  }
 
   if (!token) {
     return res.status(401).json({ error: 'Acesso negado. Token não fornecido.' });
@@ -451,6 +456,13 @@ app.post('/api/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 app.patch('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 app.put('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 app.post('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
+
+// ==========================================
+// SALVAGUARDA DE ERROS JSON (Evita retorno HTML inesperado)
+// ==========================================
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: `Endpoint de API não encontrado: ${req.method} ${req.originalUrl}` });
+});
 
 // ==========================================
 // INICIALIZAÇÃO DA API PRINCIPAL
