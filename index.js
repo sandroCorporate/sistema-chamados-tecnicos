@@ -79,6 +79,7 @@ function autenticarToken(req, res, next) {
     return res.status(403).json({ error: 'Token inválido ou expirado.' });
   }
 }
+
 // ==========================================
 // ROTAS DO SISTEMA
 // ==========================================
