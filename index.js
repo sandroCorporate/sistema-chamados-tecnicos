@@ -359,7 +359,7 @@ app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, re
 });
 
 // ==========================================
-// FUNÇÃO CENTRALIZADA: Lógica de Atualização de Chamados (PATCH)
+// FUNÇÃO CENTRALIZADA: Lógica de Atualização de Chamados
 // ==========================================
 async function processarAtualizacaoChamado(req, res) {
   try {
@@ -439,9 +439,16 @@ O seu chamado *#${String(chamadoAtualizado.id).substring(0, 8)}* foi concluído 
   }
 }
 
-// Registamos ambas as rotas (com e sem /api/) para garantir que nunca ocorra erro 404/HTML
+// ==========================================
+// REGISTO DE ROTAS DE ATUALIZAÇÃO (Blindagem Total de Métodos e Caminhos)
+// ==========================================
 app.patch('/api/chamados/:id', autenticarToken, processarAtualizacaoChamado);
+app.put('/api/chamados/:id', autenticarToken, processarAtualizacaoChamado);
+app.post('/api/chamados/:id', autenticarToken, processarAtualizacaoChamado);
+
 app.patch('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
+app.put('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
+app.post('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 
 // ==========================================
 // INICIALIZAÇÃO DA API PRINCIPAL
