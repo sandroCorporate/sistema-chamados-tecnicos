@@ -59,9 +59,11 @@ async function enviarNotificacaoWhatsApp(telefone, mensagem) {
 }
 
 // ==========================================
-// MIDDLEWARE: Autenticação JWT
+// MIDDLEWARE: Autenticação JWT (Blindado contra HTML)
 // ==========================================
 function autenticarToken(req, res, next) {
+  console.log(`[DEBUG REQ] ${req.method} ${req.originalUrl}`);
+  
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -77,7 +79,6 @@ function autenticarToken(req, res, next) {
     return res.status(403).json({ error: 'Token inválido ou expirado.' });
   }
 }
-
 // ==========================================
 // ROTAS DO SISTEMA
 // ==========================================
