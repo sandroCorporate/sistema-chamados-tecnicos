@@ -67,7 +67,6 @@ function autenticarToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   let token = authHeader && authHeader.split(' ')[1];
 
-  // Salvaguarda extra: se não vier no header, tenta apanhar nos query params ou cookies se aplicável
   if (!token && req.query && req.query.token) {
     token = req.query.token;
   }
@@ -447,18 +446,22 @@ O seu chamado *#${String(chamadoAtualizado.id).substring(0, 8)}* foi concluído 
 }
 
 // ==========================================
-// REGISTO DE ROTAS DE ATUALIZAÇÃO (Blindagem Total de Métodos e Caminhos)
+// REGISTO DE ROTAS DE ATUALIZAÇÃO (Incluindo /editar para compatibilidade)
 // ==========================================
 app.patch('/api/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 app.put('/api/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 app.post('/api/chamados/:id', autenticarToken, processarAtualizacaoChamado);
+
+app.patch('/api/chamados/:id/editar', autenticarToken, processarAtualizacaoChamado);
+app.put('/api/chamados/:id/editar', autenticarToken, processarAtualizacaoChamado);
+app.post('/api/chamados/:id/editar', autenticarToken, processarAtualizacaoChamado);
 
 app.patch('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 app.put('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 app.post('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 
 // ==========================================
-// SALVAGUARDA DE ERROS JSON (Evita retorno HTML inesperado)
+// SALVAGUARDA DE ERROS JSON
 // ==========================================
 app.use('/api/*', (req, res) => {
   res.status(404).json({ error: `Endpoint de API não encontrado: ${req.method} ${req.originalUrl}` });
