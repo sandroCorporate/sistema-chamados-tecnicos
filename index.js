@@ -424,18 +424,21 @@ async function processarAtualizacaoChamado(req, res) {
     const result = await db.query(query, params);
     const chamadoAtualizado = result.rows[0];
 
-    if (status && String(status).toUpperCase() === 'CONCLUÍDO') {
+    // Notificação geral para qualquer alteração de status efetuada pelo técnico
+    if (status) {
+      const statusUpper = String(status).toUpperCase();
       const userId = chamadoAtualizado.usuario_id || chamadoAtualizado.cliente_id || chamadoAtualizado.usuarioid;
       const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = $1', [userId]);
       const cliente = userRes.rows[0];
 
       if (cliente && cliente.telefone) {
-        const msgConclusao = `🖥️ *LL TECH INFO - ATENDIMENTO CONCLUÍDO*
+        const msgAtualizacao = `🖥️ *LL TECH INFO - ATUALIZAÇÃO DE CHAMADO*
 ----------------------------------------
 Olá, *${cliente.nome}*!
-O seu chamado *#${String(chamadoAtualizado.id).substring(0, 8)}* foi concluído com sucesso.
-🟢 *Status:* CONCLUÍDO`;
-        enviarNotificacaoWhatsApp(cliente.telefone, msgConclusao);
+O seu chamado *#${String(chamadoAtualizado.id).substring(0, 8)}* foi atualizado.
+📌 *Novo Status:* ${statusUpper}`;
+        
+        enviarNotificacaoWhatsApp(cliente.telefone, msgAtualizacao);
       }
     }
 
