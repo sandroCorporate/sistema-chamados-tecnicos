@@ -564,13 +564,22 @@
         }
       });
 
-      window.salvarDadosTecnico = async function(id) {
+      window.salvarDadosTecnico = async function(id, btnElement) {
         const selectEl = document.getElementById('select-status-' + id);
         const inputEl = document.getElementById('input-val-' + id);
         
         if (!selectEl || !inputEl) {
           alert('Erro: Elementos do formulário não encontrados.');
           return;
+        }
+
+        // Tenta encontrar o botão que foi clicado para o desativar
+        const btn = event ? event.target : document.querySelector('#card-' + id + ' button[onclick*="salvarDadosTecnico"]');
+        if (btn) {
+          btn.disabled = true;
+          btn.style.opacity = '0.5';
+          btn.style.cursor = 'not-allowed';
+          btn.innerText = 'A guardar...';
         }
 
         const novoStatus = selectEl.value;
@@ -590,6 +599,13 @@
           await carregarChamados();
         } catch (err) {
           alert('Erro ao guardar: ' + err.message);
+          // Se houver erro, reativa o botão para permitir nova tentativa
+          if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+            btn.innerText = 'Guardar Alterações';
+          }
         }
       };
 
