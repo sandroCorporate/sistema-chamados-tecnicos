@@ -14,7 +14,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'chave_secreta_super_segura';
 // URL do microserviço de WhatsApp dedicado (bridge local)
 const WHATSAPP_SERVICE_URL = process.env.WHATSAPP_SERVICE_URL || 'http://localhost:3001';
 
-// Constante para o destino do técnico (preparada para futuro grupo)
+// Constante para o destino do técnico (preparada para futuro grupo de WhatsApp)
 const DESTINO_TECNICO_WHATSAPP = process.env.WHATSAPP_TECNICO_FONE || '92986040401';
 
 // Token real do Mercado Pago integrado
@@ -66,7 +66,7 @@ async function enviarNotificacaoWhatsApp(telefone, mensagem) {
 }
 
 // ==========================================
-// MIDDLEWARE: Autenticação JWT (Blindado contra HTML)
+// MIDDLEWARE: Autenticação JWT
 // ==========================================
 function autenticarToken(req, res, next) {
   console.log(`[DEBUG REQ] ${req.method} ${req.originalUrl}`);
@@ -191,10 +191,13 @@ app.post('/api/usuarios/:id/trocar-senha', autenticarToken, async (req, res) => 
   }
 });
 
-// [ATUALIZADO]: Traz os dados de contacto do cliente via JOIN quando o pedido vem do técnico
+// ==========================================
+// ROTA: Buscar Chamados (Com JOIN de Solicitante para Técnicos)
+// ==========================================
 app.get('/api/chamados', autenticarToken, async (req, res) => {
   try {
     const tipoUsuario = String(req.usuario.tipo || '').toUpperCase();
+    
     if (tipoUsuario !== 'CLIENTE') {
       const queryTecnico = `
         SELECT c.*, 
@@ -202,14 +205,14 @@ app.get('/api/chamados', autenticarToken, async (req, res) => {
                u.email AS cliente_email, 
                u.telefone AS cliente_telefone 
         FROM chamados c
-        LEFT JOIN usuarios u ON c.usuario_id = u.id OR c.cliente_id = u.id OR c.usuarioid = u.id
+        LEFT JOIN usuarios u ON u.id = COALESCE(c.usuario_id, c.cliente_id, c.usuarioid)
         ORDER BY c.criado_em DESC
       `;
       const { rows } = await db.query(queryTecnico);
       return res.json(rows);
     }
 
-    let rows;
+    let rows = [];
     try {
       const resQuery = await db.query('SELECT * FROM chamados WHERE usuario_id = $1 ORDER BY criado_em DESC', [req.usuario.id]);
       rows = resQuery.rows;
@@ -218,16 +221,24 @@ app.get('/api/chamados', autenticarToken, async (req, res) => {
         const resQuery = await db.query('SELECT * FROM chamados WHERE cliente_id = $1 ORDER BY criado_em DESC', [req.usuario.id]);
         rows = resQuery.rows;
       } catch (err2) {
-        const resQuery = await db.query('SELECT * FROM chamados WHERE usuarioid = $1 ORDER BY criado_em DESC', [req.usuario.id]);
-        rows = resQuery.rows;
+        try {
+          const resQuery = await db.query('SELECT * FROM chamados WHERE usuarioid = $1 ORDER BY criado_em DESC', [req.usuario.id]);
+          rows = resQuery.rows;
+        } catch (err3) {
+          rows = [];
+        }
       }
     }
-    res.json(rows);
+    return res.json(rows);
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar chamados.' });
+    console.error('[Erro GET /api/chamados]:', error.message);
+    res.status(500).json({ error: 'Erro ao buscar chamados: ' + error.message });
   }
 });
 
+// ==========================================
+// ROTA: Abertura de Chamado
+// ==========================================
 app.post('/api/chamados', autenticarToken, async (req, res) => {
   try {
     const { titulo, descricao, etiqueta_foto } = req.body;
@@ -282,6 +293,9 @@ Um novo chamado foi registado no sistema!
   }
 });
 
+// ==========================================
+// INTEGRACAO MERCADO PAGO: Gerar Pix
+// ==========================================
 app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -337,6 +351,7 @@ ${qrCode}`;
   }
 });
 
+// Webhook Mercado Pago
 app.post('/api/webhook/mercadopago', async (req, res) => {
   try {
     const { action, type, data } = req.body;
@@ -393,7 +408,7 @@ app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, re
 });
 
 // ==========================================
-// FUNÇÃO CENTRALIZADA: Lógica de Atualização de Chamados
+// LÓGICA CENTRALIZADA DE ATUALIZAÇÃO
 // ==========================================
 async function processarAtualizacaoChamado(req, res) {
   try {
@@ -475,9 +490,7 @@ O seu chamado *#${String(chamadoAtualizado.id).substring(0, 8)}* foi atualizado.
   }
 }
 
-// ==========================================
 // REGISTO DE ROTAS DE ATUALIZAÇÃO
-// ==========================================
 app.patch('/api/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 app.put('/api/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 app.post('/api/chamados/:id', autenticarToken, processarAtualizacaoChamado);
@@ -490,16 +503,12 @@ app.patch('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 app.put('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 app.post('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 
-// ==========================================
 // SALVAGUARDA DE ERROS JSON
-// ==========================================
 app.use('/api/*', (req, res) => {
   res.status(404).json({ error: `Endpoint de API não encontrado: ${req.method} ${req.originalUrl}` });
 });
 
-// ==========================================
-// INICIALIZAÇÃO DA API PRINCIPAL
-// ==========================================
+// INICIALIZAÇÃO
 app.listen(PORT, () => {
   console.log(`Servidor LL TECH INFO rodando na porta ${PORT}`);
 });
