@@ -539,7 +539,7 @@
               htmlContent += '<input type="number" step="0.01" id="input-val-' + c.id + '" value="' + (c.valor || '0.03') + '" style="margin-top: 2px;" />';
               htmlContent += '</div>';
               htmlContent += '</div>';
-              htmlContent += '<button type="button" id="btn-salvar-' + c.id + '" onclick="window.salvarDadosTecnico(\'' + c.id + '\')" style="background-color: #10b981; font-size: 12px; padding: 8px 14px; border-radius: 6px; font-weight: bold; color: white; cursor: pointer;">Guardar Alterações</button>';
+              htmlContent += '<button type="button" onclick="window.salvarDadosTecnico(\'' + c.id + '\', this)" style="background-color: #10b981; font-size: 12px; padding: 8px 14px; border-radius: 6px; font-weight: bold; color: white; cursor: pointer;">Guardar Alterações</button>';
               htmlContent += '</div>';
             }
 
@@ -563,22 +563,22 @@
         }
       });
 
-      window.salvarDadosTecnico = async function(id) {
+      window.salvarDadosTecnico = async function(id, btnEl) {
         const selectEl = document.getElementById('select-status-' + id);
         const inputEl = document.getElementById('input-val-' + id);
-        const btnElement = document.getElementById('btn-salvar-' + id);
         
         if (!selectEl || !inputEl) {
           alert('Erro: Elementos do formulário não encontrados.');
           return;
         }
 
-        // Desativa o botão IMEDIATAMENTE no primeiro clique para evitar múltiplos disparos e notificações duplicadas
-        if (btnElement) {
-          btnElement.disabled = true;
-          btnElement.style.opacity = '0.5';
-          btnElement.style.cursor = 'not-allowed';
-          btnElement.innerText = 'A guardar...';
+        // BLOQUEIO IMEDIATO NO PRIMEIRO CLIQUE (Desativa e muda cor para cinzento)
+        if (btnEl) {
+          btnEl.disabled = true;
+          btnEl.style.backgroundColor = '#64748b';
+          btnEl.style.opacity = '0.6';
+          btnEl.style.cursor = 'not-allowed';
+          btnEl.innerText = 'A guardar...';
         }
 
         const novoStatus = selectEl.value;
@@ -598,12 +598,12 @@
           await carregarChamados();
         } catch (err) {
           alert('Erro ao guardar: ' + err.message);
-          // Em caso de erro, reativa o botão para permitir nova tentativa
-          if (btnElement) {
-            btnElement.disabled = false;
-            btnElement.style.opacity = '1';
-            btnElement.style.cursor = 'pointer';
-            btnElement.innerText = 'Guardar Alterações';
+          if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.style.backgroundColor = '#10b981';
+            btnEl.style.opacity = '1';
+            btnEl.style.cursor = 'pointer';
+            btnEl.innerText = 'Guardar Alterações';
           }
         }
       };
