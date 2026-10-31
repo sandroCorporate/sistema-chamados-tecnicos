@@ -16,6 +16,9 @@
       }
 
       body {
+        /* Imagem de fundo tecnológica aplicada com cobertura total e centralizada */
+        background: url('fundo-tech.jpg') no-repeat center center fixed;
+        background-size: cover;
         background-color: #0b1329;
         color: #f1f5f9;
         min-height: 100vh;
@@ -110,13 +113,13 @@
   </head>
   <body>
     
-    <div class="w-full max-w-5xl bg-[#0f172a] rounded-2xl shadow-2xl overflow-hidden border border-slate-800">
+    <div class="w-full max-w-5xl bg-[#0f172a]/85 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-slate-800">
       
       <!-- TELA DE ACESSO (LOGIN / REGISTO) -->
       <div id="screen-login" class="grid grid-cols-1 md:grid-cols-12 min-h-[620px]">
         
-        <!-- LADO ESQUERDO: Vitrine de Serviços e Identidade Visual -->
-        <div class="md:col-span-6 bg-gradient-to-br from-[#0a1128] via-[#0d1b3e] to-[#111827] p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-800 relative overflow-hidden">
+        <!-- LADO ESQUERDO: Vitrine de Serviços e Identidade Visual (Transparente sem fundos opacos) -->
+        <div class="md:col-span-6 bg-transparent p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-800/80 relative overflow-hidden">
           
           <div class="absolute -top-24 -left-24 w-60 h-60 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -131,102 +134,102 @@
                 <h1 class="text-2xl font-extrabold tracking-tight text-white">
                   LL TECH <span class="text-amber-golden">INFO</span>
                 </h1>
-                <p class="text-xs text-slate-400 font-medium">Assistência Técnica & Consultoria</p>
+                <p class="text-xs text-slate-300 font-medium">Assistência Técnica & Consultoria</p>
               </div>
             </div>
 
-            <p class="text-slate-300 text-sm mb-6 leading-relaxed">
+            <p class="text-white text-sm mb-6 leading-relaxed font-normal">
               Atendimento técnico especializado com agilidade, transparência e acompanhamento em tempo real do seu chamado.
             </p>
 
             <!-- Lista de Serviços Especializados da Empresa -->
             <div class="space-y-3 my-6">
-              <p class="text-xs font-bold text-amber-500 uppercase tracking-wider mb-2">Serviços Especializados</p>
+              <p class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">Serviços Especializados</p>
               
               <div class="grid grid-cols-2 gap-2 text-sm">
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800">
-                  <i class="fa-solid fa-laptop text-amber-500 text-base w-5 text-center"></i>
-                  <span class="text-slate-200 font-medium text-xs">Notebooks</span>
+                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
+                  <i class="fa-solid fa-laptop text-amber-400 text-base w-5 text-center"></i>
+                  <span class="text-white font-medium text-xs">Notebooks</span>
                 </div>
 
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800">
-                  <i class="fa-solid fa-tablet-screen-button text-amber-500 text-base w-5 text-center"></i>
-                  <span class="text-slate-200 font-medium text-xs">Tablets</span>
+                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
+                  <i class="fa-solid fa-tablet-screen-button text-amber-400 text-base w-5 text-center"></i>
+                  <span class="text-white font-medium text-xs">Tablets</span>
                 </div>
 
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800">
-                  <i class="fa-solid fa-desktop text-amber-500 text-base w-5 text-center"></i>
-                  <span class="text-slate-200 font-medium text-xs">Computadores</span>
+                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
+                  <i class="fa-solid fa-desktop text-amber-400 text-base w-5 text-center"></i>
+                  <span class="text-white font-medium text-xs">Computadores</span>
                 </div>
 
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800">
-                  <i class="fa-solid fa-mobile-screen-button text-amber-500 text-base w-5 text-center"></i>
-                  <span class="text-slate-200 font-medium text-xs">Smartphone</span>
+                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
+                  <i class="fa-solid fa-mobile-screen-button text-amber-400 text-base w-5 text-center"></i>
+                  <span class="text-white font-medium text-xs">Smartphone</span>
                 </div>
 
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800">
-                  <i class="fa-solid fa-network-wired text-amber-500 text-base w-5 text-center"></i>
-                  <span class="text-slate-200 font-medium text-xs">Rede de PCs</span>
+                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
+                  <i class="fa-solid fa-network-wired text-amber-400 text-base w-5 text-center"></i>
+                  <span class="text-white font-medium text-xs">Rede de PCs</span>
                 </div>
 
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/60 border border-slate-800">
-                  <i class="fa-solid fa-wifi text-amber-500 text-base w-5 text-center"></i>
-                  <span class="text-slate-200 font-medium text-xs">Redes Wi-Fi</span>
+                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
+                  <i class="fa-solid fa-wifi text-amber-400 text-base w-5 text-center"></i>
+                  <span class="text-white font-medium text-xs">Redes Wi-Fi</span>
                 </div>
 
-                <div class="col-span-2 flex items-center gap-2.5 p-2.5 rounded-lg bg-slate-900/80 border border-amber-500/30">
-                  <i class="fa-solid fa-building text-amber-500 text-base w-5 text-center"></i>
-                  <span class="text-slate-100 font-semibold text-xs">Gestão de TI & Consultoria</span>
+                <div class="col-span-2 flex items-center gap-2.5 p-2.5 rounded-lg bg-slate-900/50 border border-amber-500/30">
+                  <i class="fa-solid fa-building text-amber-400 text-base w-5 text-center"></i>
+                  <span class="text-white font-semibold text-xs">Gestão de TI & Consultoria</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- INSERÇÃO CENTRALIZADA VERTICALMENTE ENTRE GESTÃO DE TI E O RODAPÉ DO WHATSAPP -->
-          <div class="my-auto py-3 text-slate-300 text-xs leading-relaxed flex flex-col justify-center">
+          <!-- INSERÇÃO CENTRALIZADA VERTICALMENTE ENTRE GESTÃO DE TI E O RODAPÉ (Sem fundo embranquecido, letras em branco) -->
+          <div class="my-auto py-3 text-white text-xs leading-relaxed flex flex-col justify-center bg-transparent">
             <ul class="space-y-2 pl-1">
-              <li class="flex items-center gap-2">
-                <i class="fa-solid fa-check text-amber-500 text-xs"></i>
+              <li class="flex items-center gap-2 text-white">
+                <i class="fa-solid fa-check text-amber-400 text-xs"></i>
                 <span>Faça seu cadastro;</span>
               </li>
-              <li class="flex items-center gap-2">
-                <i class="fa-solid fa-check text-amber-500 text-xs"></i>
+              <li class="flex items-center gap-2 text-white">
+                <i class="fa-solid fa-check text-amber-400 text-xs"></i>
                 <span>Abra seu chamado;</span>
               </li>
-              <li class="flex items-center gap-2">
-                <i class="fa-solid fa-check text-amber-500 text-xs"></i>
+              <li class="flex items-center gap-2 text-white">
+                <i class="fa-solid fa-check text-amber-400 text-xs"></i>
                 <span>Receba informações sobre as fases do chamado no whatsapp;</span>
               </li>
-              <li class="flex items-center gap-2">
-                <i class="fa-solid fa-check text-amber-500 text-xs"></i>
+              <li class="flex items-center gap-2 text-white">
+                <i class="fa-solid fa-check text-amber-400 text-xs"></i>
                 <span>Receba link de pix e qrCode para pagamento no whatsapp;</span>
               </li>
-              <li class="flex items-center gap-2">
-                <i class="fa-solid fa-check text-amber-500 text-xs"></i>
+              <li class="flex items-center gap-2 text-white">
+                <i class="fa-solid fa-check text-amber-400 text-xs"></i>
                 <span>Receba aviso para retirada do seu equipamento no whatsapp.</span>
               </li>
             </ul>
           </div>
           <!-- FIM DA INSERÇÃO -->
 
-          <!-- Rodapé do Lado Esquerdo / Contactos Físicos -->
-          <div class="pt-4 border-t border-slate-800/80 text-xs text-slate-400 space-y-1.5">
-            <p class="flex items-center gap-2">
+          <!-- Rodapé do Lado Esquerdo / Contactos Físicos (Sem fundo embranquecido, letras em branco) -->
+          <div class="pt-4 border-t border-slate-700/60 text-xs text-white space-y-1.5 bg-transparent">
+            <p class="flex items-center gap-2 text-white">
               <i class="fa-brands fa-whatsapp text-emerald-400 text-sm"></i>
-              <span class="font-semibold text-slate-200">(92) 98604-0401</span>
+              <span class="font-semibold text-white">(92) 98604-0401</span>
             </p>
-            <p class="flex items-center gap-2">
-              <i class="fa-solid fa-location-dot text-amber-500 text-xs"></i>
-              <span>R. São Vicente, Morro da Liberdade, 39A</span>
+            <p class="flex items-center gap-2 text-white">
+              <i class="fa-solid fa-location-dot text-amber-400 text-xs"></i>
+              <span class="text-white">R. São Vicente, Morro da Liberdade, 39A</span>
             </p>
-            <p class="text-[11px] text-slate-500">
+            <p class="text-[11px] text-slate-200">
               Atendimento: Seg a Sex 09h-17h | Sáb 09h-12h
             </p>
           </div>
         </div>
 
         <!-- LADO DIREITO: Painel de Acesso (Login / Cadastro) -->
-        <div class="md:col-span-6 p-6 md:p-8 flex flex-col justify-center bg-[#0f172a]">
+        <div class="md:col-span-6 p-6 md:p-8 flex flex-col justify-center bg-[#0f172a]/95">
           <div class="max-w-sm mx-auto w-full">
             
             <div class="text-center mb-6">
@@ -294,7 +297,7 @@
       </div>
 
       <!-- PAINEL PRINCIPAL (DASHBOARD) -->
-      <div id="screen-dashboard" class="p-6 md:p-8 hidden">
+      <div id="screen-dashboard" class="p-6 md:p-8 hidden bg-[#0f172a]/95">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-4 mb-6 border-b border-slate-800 gap-4">
           <div class="flex items-center gap-3">
             <img src="/logo.png" alt="LL TECH INFO" class="h-10 w-auto" onerror="this.style.display='none'" />
