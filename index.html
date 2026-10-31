@@ -466,6 +466,7 @@
             htmlContent += '<span class="badge badge-' + statusClass + '">' + c.status + '</span>';
             htmlContent += '</div>';
 
+            // REINTEGRADO: Exibe os dados do solicitante no painel do técnico
             if (!isCliente && (c.cliente_nome || c.cliente_email || c.cliente_telefone)) {
               htmlContent += '<div style="margin-top: 10px; background: rgba(15, 23, 42, 0.9); padding: 10px; border-radius: 6px; border: 1px solid #334155; font-size: 12px;">';
               htmlContent += '<p style="color: #f59e0b; font-weight: bold; margin-bottom: 4px;"><i class="fa-solid fa-user-gear mr-1"></i> Dados do Solicitante:</p>';
