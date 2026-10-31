@@ -192,24 +192,40 @@ app.post('/api/usuarios/:id/trocar-senha', autenticarToken, async (req, res) => 
 });
 
 // ==========================================
-// ROTA: Buscar Chamados (Com JOIN de Solicitante para Técnicos)
+// ROTA: Buscar Chamados (Com JOIN seguro para Técnicos)
 // ==========================================
 app.get('/api/chamados', autenticarToken, async (req, res) => {
   try {
     const tipoUsuario = String(req.usuario.tipo || '').toUpperCase();
     
     if (tipoUsuario !== 'CLIENTE') {
+      // Query blindada que deteta a coluna de ligação existente na tabela chamados
       const queryTecnico = `
         SELECT c.*, 
                u.nome AS cliente_nome, 
                u.email AS cliente_email, 
                u.telefone AS cliente_telefone 
         FROM chamados c
-        LEFT JOIN usuarios u ON u.id = COALESCE(c.usuario_id, c.cliente_id, c.usuarioid)
+        LEFT JOIN usuarios u ON u.id = c.usuario_id
         ORDER BY c.criado_em DESC
       `;
-      const { rows } = await db.query(queryTecnico);
-      return res.json(rows);
+      try {
+        const { rows } = await db.query(queryTecnico);
+        return res.json(rows);
+      } catch (e1) {
+        // Fallback caso a coluna seja usuarioid
+        const queryTecnicoFallback = `
+          SELECT c.*, 
+                 u.nome AS cliente_nome, 
+                 u.email AS cliente_email, 
+                 u.telefone AS cliente_telefone 
+          FROM chamados c
+          LEFT JOIN usuarios u ON u.id = c.usuarioid
+          ORDER BY c.criado_em DESC
+        `;
+        const { rows } = await db.query(queryTecnicoFallback);
+        return res.json(rows);
+      }
     }
 
     let rows = [];
@@ -218,15 +234,10 @@ app.get('/api/chamados', autenticarToken, async (req, res) => {
       rows = resQuery.rows;
     } catch (err1) {
       try {
-        const resQuery = await db.query('SELECT * FROM chamados WHERE cliente_id = $1 ORDER BY criado_em DESC', [req.usuario.id]);
+        const resQuery = await db.query('SELECT * FROM chamados WHERE usuarioid = $1 ORDER BY criado_em DESC', [req.usuario.id]);
         rows = resQuery.rows;
       } catch (err2) {
-        try {
-          const resQuery = await db.query('SELECT * FROM chamados WHERE usuarioid = $1 ORDER BY criado_em DESC', [req.usuario.id]);
-          rows = resQuery.rows;
-        } catch (err3) {
-          rows = [];
-        }
+        rows = [];
       }
     }
     return res.json(rows);
@@ -256,7 +267,7 @@ app.post('/api/chamados', autenticarToken, async (req, res) => {
       );
     } catch (err1) {
       result = await db.query(
-        'INSERT INTO chamados (titulo, descricao, cliente_id, status, etiqueta_foto) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        'INSERT INTO chamados (titulo, descricao, usuarioid, status, etiqueta_foto) VALUES ($1, $2, $3, $4, $5) RETURNING *',
         [titulo, descricao, req.usuario.id, 'ABERTO', etiqueta_foto || null]
       );
     }
@@ -369,7 +380,7 @@ app.post('/api/webhook/mercadopago', async (req, res) => {
 
         if (updateRes.rows.length > 0) {
           const ch = updateRes.rows[0];
-          const userId = ch.usuario_id || ch.cliente_id || ch.usuarioid;
+          const userId = ch.usuario_id || ch.usuarioid;
           const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = $1', [userId]);
           const cliente = userRes.rows[0];
 
@@ -424,7 +435,7 @@ async function processarAtualizacaoChamado(req, res) {
     const chamadoAtual = chamadoAtualRes.rows[0];
 
     if (tipoUsuario === 'CLIENTE') {
-      const donoId = chamadoAtual.usuario_id || chamadoAtual.cliente_id || chamadoAtual.usuarioid;
+      const donoId = chamadoAtual.usuario_id || chamadoAtual.usuarioid;
       if (donoId !== req.usuario.id) {
         return res.status(403).json({ error: 'Acesso negado.' });
       }
@@ -469,7 +480,7 @@ async function processarAtualizacaoChamado(req, res) {
 
     if (status) {
       const statusUpper = String(status).toUpperCase();
-      const userId = chamadoAtualizado.usuario_id || chamadoAtualizado.cliente_id || chamadoAtualizado.usuarioid;
+      const userId = chamadoAtualizado.usuario_id || chamadoAtualizado.usuarioid;
       const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = $1', [userId]);
       const cliente = userRes.rows[0];
 
