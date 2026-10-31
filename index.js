@@ -14,6 +14,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'chave_secreta_super_segura';
 // URL do microserviço de WhatsApp dedicado (bridge local)
 const WHATSAPP_SERVICE_URL = process.env.WHATSAPP_SERVICE_URL || 'http://localhost:3001';
 
+// Constante para o destino do técnico (preparada para futuro grupo)
+const DESTINO_TECNICO_WHATSAPP = process.env.WHATSAPP_TECNICO_FONE || '92986040401';
+
 // Token real do Mercado Pago integrado
 const MP_TOKEN_REAL = 'APP_USR-5595843191696827-101213-f5e5271648f3f70353dbc57f81016599-332217735';
 
@@ -35,11 +38,15 @@ async function enviarNotificacaoWhatsApp(telefone, mensagem) {
   }
 
   let numApenasDigitos = telefone.replace(/\D/g, '');
-  if (numApenasDigitos.length === 10 || numApenasDigitos.length === 11) {
-    numApenasDigitos = '55' + numApenasDigitos;
+  let jid;
+  if (telefone.includes('@g.us')) {
+    jid = telefone;
+  } else {
+    if (numApenasDigitos.length === 10 || numApenasDigitos.length === 11) {
+      numApenasDigitos = '55' + numApenasDigitos;
+    }
+    jid = `${numApenasDigitos}@s.whatsapp.net`;
   }
-
-  const jid = `${numApenasDigitos}@s.whatsapp.net`;
 
   try {
     const response = await fetch(`${WHATSAPP_SERVICE_URL}/enviar`, {
@@ -52,7 +59,7 @@ async function enviarNotificacaoWhatsApp(telefone, mensagem) {
       throw new Error(`Erro HTTP: ${response.status}`);
     }
     
-    console.log(`[WhatsApp Sent] Requisição de envio encaminhada para o microserviço (${numApenasDigitos}).`);
+    console.log(`[WhatsApp Sent] Requisição de envio encaminhada para o microserviço (${jid}).`);
   } catch (error) {
     console.error('[WhatsApp Error] Falha ao comunicar com o microserviço:', error.message);
   }
@@ -184,11 +191,21 @@ app.post('/api/usuarios/:id/trocar-senha', autenticarToken, async (req, res) => 
   }
 });
 
+// [ATUALIZADO]: Traz os dados de contacto do cliente via JOIN quando o pedido vem do técnico
 app.get('/api/chamados', autenticarToken, async (req, res) => {
   try {
     const tipoUsuario = String(req.usuario.tipo || '').toUpperCase();
     if (tipoUsuario !== 'CLIENTE') {
-      const { rows } = await db.query('SELECT * FROM chamados ORDER BY criado_em DESC');
+      const queryTecnico = `
+        SELECT c.*, 
+               u.nome AS cliente_nome, 
+               u.email AS cliente_email, 
+               u.telefone AS cliente_telefone 
+        FROM chamados c
+        LEFT JOIN usuarios u ON c.usuario_id = u.id OR c.cliente_id = u.id OR c.usuarioid = u.id
+        ORDER BY c.criado_em DESC
+      `;
+      const { rows } = await db.query(queryTecnico);
       return res.json(rows);
     }
 
@@ -246,6 +263,17 @@ O seu chamado foi registrado com sucesso.
 📝 *Assunto:* ${titulo}
 🟢 *Status:* ABERTO`;
       enviarNotificacaoWhatsApp(cliente.telefone, msgAbertura);
+    }
+
+    if (DESTINO_TECNICO_WHATSAPP) {
+      const msgAberturaTecnico = `🚨 *NOVO CHAMADO ABERTO*
+----------------------------------------
+Um novo chamado foi registado no sistema!
+📌 *Chamado:* #${String(chamadoId).substring(0, 8)}
+👤 *Cliente:* ${cliente ? cliente.nome : 'Desconhecido'}
+📝 *Assunto:* ${titulo}
+📄 *Descrição:* ${descricao}`;
+      enviarNotificacaoWhatsApp(DESTINO_TECNICO_WHATSAPP, msgAberturaTecnico);
     }
 
     res.status(201).json({ mensagem: 'Chamado aberto com sucesso!', chamado: result.rows[0] });
@@ -424,7 +452,6 @@ async function processarAtualizacaoChamado(req, res) {
     const result = await db.query(query, params);
     const chamadoAtualizado = result.rows[0];
 
-    // Notificação geral para qualquer alteração de status efetuada pelo técnico
     if (status) {
       const statusUpper = String(status).toUpperCase();
       const userId = chamadoAtualizado.usuario_id || chamadoAtualizado.cliente_id || chamadoAtualizado.usuarioid;
@@ -449,7 +476,7 @@ O seu chamado *#${String(chamadoAtualizado.id).substring(0, 8)}* foi atualizado.
 }
 
 // ==========================================
-// REGISTO DE ROTAS DE ATUALIZAÇÃO (Incluindo /editar para compatibilidade)
+// REGISTO DE ROTAS DE ATUALIZAÇÃO
 // ==========================================
 app.patch('/api/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 app.put('/api/chamados/:id', autenticarToken, processarAtualizacaoChamado);
