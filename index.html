@@ -16,7 +16,6 @@
       }
 
       body {
-        /* Caminho ajustado para garantir o carregamento correto via Express estático */
         background: #0b1329 url('/public/fundo-tech.jpg') no-repeat center center fixed;
         background-size: cover;
         color: #f1f5f9;
@@ -27,7 +26,6 @@
         padding: 16px;
       }
 
-      /* Utilitários e Estilos do Sistema */
       .hidden { display: none !important; }
       
       .text-amber-golden { color: #f59e0b; }
@@ -66,7 +64,6 @@
       .msg-success { background-color: #143823; color: #86efac; border: 1px solid #14532d; }
       .pix-box { background: #0f172a; border: 1px dashed #f97316; padding: 12px; border-radius: 8px; margin-top: 12px; text-align: center; }
 
-      /* Estilo dos Inputs Legados mantendo responsividade */
       input, textarea, select {
         width: 100%;
         padding: 10px 12px;
@@ -117,13 +114,11 @@
       <!-- TELA DE ACESSO (LOGIN / REGISTO) -->
       <div id="screen-login" class="grid grid-cols-1 md:grid-cols-12 min-h-[620px]">
         
-        <!-- LADO ESQUERDO: Vitrine de Serviços e Identidade Visual (Transparente sem fundos opacos) -->
         <div class="md:col-span-6 bg-transparent p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-800/80 relative overflow-hidden">
           
           <div class="absolute -top-24 -left-24 w-60 h-60 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
           <div>
-            <!-- Cabeçalho Institucional -->
             <div class="flex items-center gap-3 mb-6">
               <img src="/logo.png" alt="LL TECH INFO" class="h-12 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('logo-fallback').classList.remove('hidden');" />
               <div id="logo-fallback" class="hidden w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 text-2xl">
@@ -141,7 +136,6 @@
               Atendimento técnico especializado com agilidade, transparência e acompanhamento em tempo real do seu chamado.
             </p>
 
-            <!-- Lista de Serviços Especializados da Empresa -->
             <div class="space-y-3 my-6">
               <p class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">Serviços Especializados</p>
               
@@ -150,32 +144,26 @@
                   <i class="fa-solid fa-laptop text-amber-400 text-base w-5 text-center"></i>
                   <span class="text-white font-medium text-xs">Notebooks</span>
                 </div>
-
                 <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
                   <i class="fa-solid fa-tablet-screen-button text-amber-400 text-base w-5 text-center"></i>
                   <span class="text-white font-medium text-xs">Tablets</span>
                 </div>
-
                 <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
                   <i class="fa-solid fa-desktop text-amber-400 text-base w-5 text-center"></i>
                   <span class="text-white font-medium text-xs">Computadores</span>
                 </div>
-
                 <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
                   <i class="fa-solid fa-mobile-screen-button text-amber-400 text-base w-5 text-center"></i>
                   <span class="text-white font-medium text-xs">Smartphone</span>
                 </div>
-
                 <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
                   <i class="fa-solid fa-network-wired text-amber-400 text-base w-5 text-center"></i>
                   <span class="text-white font-medium text-xs">Rede de PCs</span>
                 </div>
-
                 <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
                   <i class="fa-solid fa-wifi text-amber-400 text-base w-5 text-center"></i>
                   <span class="text-white font-medium text-xs">Redes Wi-Fi</span>
                 </div>
-
                 <div class="col-span-2 flex items-center gap-2.5 p-2.5 rounded-lg bg-slate-900/50 border border-amber-500/30">
                   <i class="fa-solid fa-building text-amber-400 text-base w-5 text-center"></i>
                   <span class="text-white font-semibold text-xs">Gestão de TI & Consultoria</span>
@@ -184,34 +172,16 @@
             </div>
           </div>
 
-          <!-- INSERÇÃO CENTRALIZADA VERTICALMENTE ENTRE GESTÃO DE TI E O RODAPÉ (Sem fundo embranquecido, letras em branco) -->
           <div class="my-auto py-3 text-white text-xs leading-relaxed flex flex-col justify-center bg-transparent">
             <ul class="space-y-2 pl-1">
-              <li class="flex items-center gap-2 text-white">
-                <i class="fa-solid fa-check text-amber-400 text-xs"></i>
-                <span>Faça seu cadastro;</span>
-              </li>
-              <li class="flex items-center gap-2 text-white">
-                <i class="fa-solid fa-check text-amber-400 text-xs"></i>
-                <span>Abra seu chamado;</span>
-              </li>
-              <li class="flex items-center gap-2 text-white">
-                <i class="fa-solid fa-check text-amber-400 text-xs"></i>
-                <span>Receba informações sobre as fases do chamado no whatsapp;</span>
-              </li>
-              <li class="flex items-center gap-2 text-white">
-                <i class="fa-solid fa-check text-amber-400 text-xs"></i>
-                <span>Receba link de pix e qrCode para pagamento no whatsapp;</span>
-              </li>
-              <li class="flex items-center gap-2 text-white">
-                <i class="fa-solid fa-check text-amber-400 text-xs"></i>
-                <span>Receba aviso para retirada do seu equipamento no whatsapp.</span>
-              </li>
+              <li class="flex items-center gap-2 text-white"><i class="fa-solid fa-check text-amber-400 text-xs"></i><span>Faça seu cadastro;</span></li>
+              <li class="flex items-center gap-2 text-white"><i class="fa-solid fa-check text-amber-400 text-xs"></i><span>Abra seu chamado;</span></li>
+              <li class="flex items-center gap-2 text-white"><i class="fa-solid fa-check text-amber-400 text-xs"></i><span>Receba informações sobre as fases do chamado no whatsapp;</span></li>
+              <li class="flex items-center gap-2 text-white"><i class="fa-solid fa-check text-amber-400 text-xs"></i><span>Receba link de pix e qrCode para pagamento no whatsapp;</span></li>
+              <li class="flex items-center gap-2 text-white"><i class="fa-solid fa-check text-amber-400 text-xs"></i><span>Receba aviso para retirada do seu equipamento no whatsapp.</span></li>
             </ul>
           </div>
-          <!-- FIM DA INSERÇÃO -->
 
-          <!-- Rodapé do Lado Esquerdo / Contactos Físicos (Sem fundo embranquecido, letras em branco) -->
           <div class="pt-4 border-t border-slate-700/60 text-xs text-white space-y-1.5 bg-transparent">
             <p class="flex items-center gap-2 text-white">
               <i class="fa-brands fa-whatsapp text-emerald-400 text-sm"></i>
@@ -221,13 +191,10 @@
               <i class="fa-solid fa-location-dot text-amber-400 text-xs"></i>
               <span class="text-white">R. São Vicente, Morro da Liberdade, 39A</span>
             </p>
-            <p class="text-[11px] text-slate-200">
-              Atendimento: Seg a Sex 09h-17h | Sáb 09h-12h
-            </p>
+            <p class="text-[11px] text-slate-200">Atendimento: Seg a Sex 09h-17h | Sáb 09h-12h</p>
           </div>
         </div>
 
-        <!-- LADO DIREITO: Painel de Acesso (Login / Cadastro) -->
         <div class="md:col-span-6 p-6 md:p-8 flex flex-col justify-center bg-[#0f172a]/95">
           <div class="max-w-sm mx-auto w-full">
             
@@ -236,13 +203,11 @@
               <p class="text-slate-400 text-xs mt-1">Aceda para gerir os seus chamados técnicos</p>
             </div>
 
-            <!-- Abas Alternadoras (Login / Criar Conta) -->
             <div class="tab-auth flex bg-slate-900 p-1 rounded-xl mb-6 border border-slate-800">
               <button type="button" id="btn-tab-login" class="active flex-1 py-2 text-xs font-semibold rounded-lg" onclick="alternarAba('login')">Entrar</button>
               <button type="button" id="btn-tab-registro" class="flex-1 py-2 text-xs font-semibold rounded-lg" onclick="alternarAba('registro')">Criar Conta</button>
             </div>
 
-            <!-- Formulário de Login -->
             <div id="box-login">
               <div id="login-msg"></div>
               <form id="form-login" class="space-y-4">
@@ -260,7 +225,6 @@
               </form>
             </div>
 
-            <!-- Formulário de Registo de Cliente -->
             <div id="box-registro" class="hidden">
               <div id="reg-msg"></div>
               <form id="form-registro" class="space-y-3">
@@ -310,7 +274,6 @@
           </button>
         </div>
 
-        <!-- Formulário de Abrir Chamado (Apenas CLIENTE) -->
         <div id="section-novo-chamado" class="card mb-6">
           <h4 class="text-base font-bold text-white mb-3">Abrir Novo Chamado</h4>
           <div id="chamado-msg"></div>
@@ -403,7 +366,6 @@
         carregarChamados();
       }
 
-      // Login
       document.getElementById('form-login').addEventListener('submit', async (e) => {
         e.preventDefault();
         loginMsg.innerHTML = '';
@@ -429,7 +391,6 @@
         }
       });
 
-      // Registo Público
       document.getElementById('form-registro').addEventListener('submit', async (e) => {
         e.preventDefault();
         regMsg.innerHTML = '';
@@ -457,7 +418,6 @@
         }
       });
 
-      // Função auxiliar para verificar pagamentos pendentes no Mercado Pago
       async function verificarPagamentosPendentes(chamados) {
         for (let c of chamados) {
           if ((c.status === 'AGUARDANDO PAGAMENTO' || c.status === 'AGUARDANDO_PAGAMENTO') && c.pagamento_id) {
@@ -505,6 +465,17 @@
             htmlContent += '<h4 id="titulo-' + c.id + '" style="font-weight: 700; color: #ffffff;">' + c.titulo + '</h4>';
             htmlContent += '<span class="badge badge-' + statusClass + '">' + c.status + '</span>';
             htmlContent += '</div>';
+
+            // [NOVO]: Exibe Nome, E-mail e WhatsApp do Cliente para o Técnico/Admin
+            if (!isCliente && (c.cliente_nome || c.cliente_email || c.cliente_telefone)) {
+              htmlContent += '<div style="margin-top: 10px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155; font-size: 12px;">';
+              htmlContent += '<p style="color: #f59e0b; font-weight: bold; margin-bottom: 4px;"><i class="fa-solid fa-user-gear mr-1"></i> Dados do Solicitante:</p>';
+              htmlContent += '<p style="color: #f1f5f9;"><strong>Nome:</strong> ' + (c.cliente_nome || 'Não informado') + '</p>';
+              htmlContent += '<p style="color: #cbd5e1;"><strong>E-mail:</strong> ' + (c.cliente_email || 'Não informado') + '</p>';
+              htmlContent += '<p style="color: #cbd5e1;"><strong>WhatsApp:</strong> ' + (c.cliente_telefone || 'Não informado') + '</p>';
+              htmlContent += '</div>';
+            }
+
             htmlContent += '<p id="desc-' + c.id + '" style="margin-top: 8px; color: #cbd5e1; font-size: 13px;">' + c.descricao + '</p>';
             
             if (c.etiqueta_foto) {
