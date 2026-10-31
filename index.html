@@ -305,7 +305,7 @@
 
     </div>
 
-    <!-- Modal para Ampliar Foto da Etiqueta -->
+    <!-- Modal Zoom -->
     <div id="modal-zoom" class="hidden fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-4">
       <div class="relative max-w-full max-h-full flex flex-col items-center">
         <button type="button" onclick="fecharZoomEtiqueta()" class="mb-3 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-lg shadow-lg cursor-pointer">
@@ -315,7 +315,7 @@
       </div>
     </div>
 
-    <!-- JAVASCRIPT DO SISTEMA -->
+    <!-- JAVASCRIPT -->
     <script>
       let token = localStorage.getItem('token');
       let usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
@@ -466,7 +466,7 @@
             htmlContent += '<span class="badge badge-' + statusClass + '">' + c.status + '</span>';
             htmlContent += '</div>';
 
-            // [NOVO]: Exibe Nome, E-mail e WhatsApp do Cliente para o Técnico/Admin
+            // BLOCO VISUAL: Exibe Nome, E-mail e WhatsApp do Criador do Chamado no Painel Técnico
             if (!isCliente && (c.cliente_nome || c.cliente_email || c.cliente_telefone)) {
               htmlContent += '<div style="margin-top: 10px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155; font-size: 12px;">';
               htmlContent += '<p style="color: #f59e0b; font-weight: bold; margin-bottom: 4px;"><i class="fa-solid fa-user-gear mr-1"></i> Dados do Solicitante:</p>';
