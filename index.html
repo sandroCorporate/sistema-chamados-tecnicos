@@ -16,7 +16,7 @@
       }
 
       body {
-        background: #0b1329 url('/public/fundo-tech.jpg') no-repeat center center fixed;
+        background: #0b1329 url('/fundo-tech.jpg') no-repeat center center fixed;
         background-size: cover;
         color: #f1f5f9;
         min-height: 100vh;
@@ -32,7 +32,7 @@
       .bg-amber-golden { background-color: #f59e0b; }
 
       .card {
-        background: #1e293b;
+        background: rgba(30, 41, 59, 0.85);
         border: 1px solid #334155;
         border-radius: 8px;
         padding: 16px;
@@ -109,7 +109,7 @@
   </head>
   <body>
     
-    <div class="w-full max-w-5xl bg-[#0f172a]/85 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-slate-800">
+    <div class="w-full max-w-5xl bg-[#0f172a]/75 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-slate-800">
       
       <!-- TELA DE ACESSO (LOGIN / REGISTO) -->
       <div id="screen-login" class="grid grid-cols-1 md:grid-cols-12 min-h-[620px]">
@@ -195,7 +195,7 @@
           </div>
         </div>
 
-        <div class="md:col-span-6 p-6 md:p-8 flex flex-col justify-center bg-[#0f172a]/95">
+        <div class="md:col-span-6 p-6 md:p-8 flex flex-col justify-center bg-[#0f172a]/80 backdrop-blur-md">
           <div class="max-w-sm mx-auto w-full">
             
             <div class="text-center mb-6">
@@ -203,7 +203,7 @@
               <p class="text-slate-400 text-xs mt-1">Aceda para gerir os seus chamados técnicos</p>
             </div>
 
-            <div class="tab-auth flex bg-slate-900 p-1 rounded-xl mb-6 border border-slate-800">
+            <div class="tab-auth flex bg-slate-900/80 p-1 rounded-xl mb-6 border border-slate-800">
               <button type="button" id="btn-tab-login" class="active flex-1 py-2 text-xs font-semibold rounded-lg" onclick="alternarAba('login')">Entrar</button>
               <button type="button" id="btn-tab-registro" class="flex-1 py-2 text-xs font-semibold rounded-lg" onclick="alternarAba('registro')">Criar Conta</button>
             </div>
@@ -260,7 +260,7 @@
       </div>
 
       <!-- PAINEL PRINCIPAL (DASHBOARD) -->
-      <div id="screen-dashboard" class="p-6 md:p-8 hidden bg-[#0f172a]/95">
+      <div id="screen-dashboard" class="p-6 md:p-8 hidden bg-[#0f172a]/75 backdrop-blur-md">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-4 mb-6 border-b border-slate-800 gap-4">
           <div class="flex items-center gap-3">
             <img src="/logo.png" alt="LL TECH INFO" class="h-10 w-auto" onerror="this.style.display='none'" />
@@ -467,7 +467,7 @@
             htmlContent += '</div>';
 
             if (!isCliente && (c.cliente_nome || c.cliente_email || c.cliente_telefone)) {
-              htmlContent += '<div style="margin-top: 10px; background: #0f172a; padding: 10px; border-radius: 6px; border: 1px solid #334155; font-size: 12px;">';
+              htmlContent += '<div style="margin-top: 10px; background: rgba(15, 23, 42, 0.9); padding: 10px; border-radius: 6px; border: 1px solid #334155; font-size: 12px;">';
               htmlContent += '<p style="color: #f59e0b; font-weight: bold; margin-bottom: 4px;"><i class="fa-solid fa-user-gear mr-1"></i> Dados do Solicitante:</p>';
               htmlContent += '<p style="color: #f1f5f9;"><strong>Nome:</strong> ' + (c.cliente_nome || 'Não informado') + '</p>';
               htmlContent += '<p style="color: #cbd5e1;"><strong>E-mail:</strong> ' + (c.cliente_email || 'Não informado') + '</p>';
@@ -478,7 +478,7 @@
             htmlContent += '<p id="desc-' + c.id + '" style="margin-top: 8px; color: #cbd5e1; font-size: 13px;">' + c.descricao + '</p>';
             
             if (c.etiqueta_foto) {
-              htmlContent += '<div style="margin-top: 10px; background: #0f172a; padding: 8px; border-radius: 6px; border: 1px solid #334155;">';
+              htmlContent += '<div style="margin-top: 10px; background: rgba(15, 23, 42, 0.9); padding: 8px; border-radius: 6px; border: 1px solid #334155;">';
               htmlContent += '<p style="font-size: 11px; color: #f59e0b; font-weight: bold; margin-bottom: 6px;"><i class="fa-solid fa-image mr-1"></i> Etiqueta do Equipamento (Clique para ampliar):</p>';
               htmlContent += '<img src="' + c.etiqueta_foto + '" alt="Foto da Etiqueta" onclick="abrirZoomEtiqueta(\'' + c.etiqueta_foto + '\')" style="max-width: 100%; max-height: 220px; border-radius: 4px; display: block; margin: 0 auto; object-fit: contain; cursor: pointer;" title="Clique para ver em tamanho ampliado" />';
               htmlContent += '</div>';
@@ -572,11 +572,11 @@
           return;
         }
 
-        // BLOQUEIO IMEDIATO NO PRIMEIRO CLIQUE (Desativa e muda cor para cinzento)
+        // BLOQUEIO TOTAL IMEDIATO NO PRIMEIRO CLIQUE
         if (btnEl) {
           btnEl.disabled = true;
           btnEl.style.backgroundColor = '#64748b';
-          btnEl.style.opacity = '0.6';
+          btnEl.style.opacity = '0.5';
           btnEl.style.cursor = 'not-allowed';
           btnEl.innerText = 'A guardar...';
         }
