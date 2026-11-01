@@ -527,11 +527,11 @@
               const selEmAtendimento = (c.status === 'EM ATENDIMENTO' || c.status === 'EM_ATENDIMENTO') ? 'selected' : '';
               const selConcluido = c.status === 'CONCLUIDO' ? 'selected' : '';
 
-              const jaProcessado = chamadosProcessados.has(c.id);
-              const btnBg = jaProcessado ? '#64748b' : '#10b981';
-              const btnText = jaProcessado ? 'Guardado / Atualizado' : 'Guardar Alterações';
-              const btnDisabled = jaProcessado ? 'disabled' : '';
-              const btnCursor = jaProcessado ? 'not-allowed' : 'pointer';
+            const isConcluido = (c.status === 'CONCLUIDO');
+            const btnBg = isConcluido ? '#334155' : (jaProcessado ? '#64748b' : '#10b981');
+            const btnText = isConcluido ? 'Concluído' : (jaProcessado ? 'Guardado / Atualizado' : 'Guardar Alterações');
+            const btnDisabled = (isConcluido || jaProcessado) ? 'disabled' : '';
+            const btnCursor = (isConcluido || jaProcessado) ? 'not-allowed' : 'pointer';
 
               htmlContent += '<div style="margin-top: 10px; border-top: 1px solid #334155; padding-top: 8px;">';
               htmlContent += '<div style="display: flex; gap: 8px; align-items: flex-end; margin-bottom: 6px;">';
@@ -549,7 +549,7 @@
               htmlContent += '<input type="number" step="0.01" id="input-val-' + c.id + '" value="' + (c.valor || '0.03') + '" style="margin-top: 2px;" />';
               htmlContent += '</div>';
               htmlContent += '</div>';
-              htmlContent += '<button type="button" ' + btnDisabled + ' onclick="window.salvarDadosTecnico(\'' + c.id + '\', this)" style="background-color: ' + btnBg + '; font-size: 12px; padding: 8px 14px; border-radius: 6px; font-weight: bold; color: white; cursor: ' + btnCursor + ';">' + btnText + '</button>';
+              htmlContent += '<button type="button" ' + btnDisabled + ' onclick="window.salvarDadosTecnico(\'' + c.id + '\', this)" style="background-color: ' + btnBg + '; font-size: 12px; padding: 8px 14px; border-radius: 6px; font-weight: bold; color: ' + (isConcluido ? '#94a3b8' : 'white') + '; cursor: ' + btnCursor + ';">' + btnText + '</button>';
               htmlContent += '</div>';
             }
 
