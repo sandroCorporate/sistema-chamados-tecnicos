@@ -320,6 +320,9 @@
       let token = localStorage.getItem('token');
       let usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
 
+      // Lista de controlo para manter o botão desativado e cinzento após o primeiro clique na sessão
+      const chamadosProcessados = new Set();
+
       const screenLogin = document.getElementById('screen-login');
       const screenDashboard = document.getElementById('screen-dashboard');
       const loginMsg = document.getElementById('login-msg');
@@ -524,6 +527,12 @@
               const selEmAtendimento = (c.status === 'EM ATENDIMENTO' || c.status === 'EM_ATENDIMENTO') ? 'selected' : '';
               const selConcluido = c.status === 'CONCLUIDO' ? 'selected' : '';
 
+              const jaProcessado = chamadosProcessados.has(c.id);
+              const btnBg = jaProcessado ? '#64748b' : '#10b981';
+              const btnText = jaProcessado ? 'Guardado / Atualizado' : 'Guardar Alterações';
+              const btnDisabled = jaProcessado ? 'disabled' : '';
+              const btnCursor = jaProcessado ? 'not-allowed' : 'pointer';
+
               htmlContent += '<div style="margin-top: 10px; border-top: 1px solid #334155; padding-top: 8px;">';
               htmlContent += '<div style="display: flex; gap: 8px; align-items: flex-end; margin-bottom: 6px;">';
               htmlContent += '<div style="flex: 1;">';
@@ -540,7 +549,7 @@
               htmlContent += '<input type="number" step="0.01" id="input-val-' + c.id + '" value="' + (c.valor || '0.03') + '" style="margin-top: 2px;" />';
               htmlContent += '</div>';
               htmlContent += '</div>';
-              htmlContent += '<button type="button" onclick="window.salvarDadosTecnico(\'' + c.id + '\', this)" style="background-color: #10b981; font-size: 12px; padding: 8px 14px; border-radius: 6px; font-weight: bold; color: white; cursor: pointer;">Guardar Alterações</button>';
+              htmlContent += '<button type="button" ' + btnDisabled + ' onclick="window.salvarDadosTecnico(\'' + c.id + '\', this)" style="background-color: ' + btnBg + '; font-size: 12px; padding: 8px 14px; border-radius: 6px; font-weight: bold; color: white; cursor: ' + btnCursor + ';">' + btnText + '</button>';
               htmlContent += '</div>';
             }
 
@@ -582,6 +591,9 @@
           btnEl.innerText = 'A guardar...';
         }
 
+        // Regista este ID como processado nesta sessão
+        chamadosProcessados.add(id);
+
         const novoStatus = selectEl.value;
         const novoValor = parseFloat(inputEl.value) || 0.03;
 
@@ -599,6 +611,8 @@
           await carregarChamados();
         } catch (err) {
           alert('Erro ao guardar: ' + err.message);
+          // Se houver erro, remove da lista para permitir nova tentativa
+          chamadosProcessados.delete(id);
           if (btnEl) {
             btnEl.disabled = false;
             btnEl.style.backgroundColor = '#10b981';
