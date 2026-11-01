@@ -430,6 +430,12 @@
               });
               const data = await res.json();
               if (data.pago) {
+                // Envia o pedido PATCH para o backend atualizar o banco e disparar o WhatsApp
+                await fetch('/api/chamados/' + c.id, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                  body: JSON.stringify({ status: 'EM ATENDIMENTO', valor: c.valor })
+                });
                 c.status = 'EM ATENDIMENTO';
               }
             } catch (err) {
