@@ -557,6 +557,7 @@
             htmlContent += '</div>';
             htmlContent += '<button type="button" ' + btnDisabled + ' onclick="window.salvarDadosTecnico(\'' + c.id + '\', this)" style="background-color: ' + btnBg + '; font-size: 12px; padding: 8px 14px; border-radius: 6px; font-weight: bold; color: ' + (isConcluido ? '#94a3b8' : 'white') + '; cursor: ' + btnCursor + ';">' + btnText + '</button>';
             htmlContent += '</div>';
+              
         // BLOQUEIO TOTAL IMEDIATO NO PRIMEIRO CLIQUE
         if (btnEl) {
           btnEl.disabled = true;
