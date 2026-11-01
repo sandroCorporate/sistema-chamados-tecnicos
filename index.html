@@ -528,15 +528,15 @@
               const selConcluido = c.status === 'CONCLUIDO' ? 'selected' : '';
 
             const isConcluido = (c.status === 'CONCLUIDO');
-            const btnBg = isConcluido ? '#334155' : (jaProcessado ? '#64748b' : '#10b981');
-            const btnText = isConcluido ? 'Concluído' : (jaProcessado ? 'Guardado / Atualizado' : 'Guardar Alterações');
-            const btnDisabled = (isConcluido || jaProcessado) ? 'disabled' : '';
-            const btnCursor = (isConcluido || jaProcessado) ? 'not-allowed' : 'pointer';
-            
+            const btnBg = isConcluido ? '#334155' : '#10b981';
+            const btnText = isConcluido ? 'Concluído' : 'Guardar Alterações';
+            const btnDisabled = isConcluido ? 'disabled' : '';
+            const btnCursor = isConcluido ? 'not-allowed' : 'pointer';
+              
             // Novas variáveis para bloquear o select e o input de valor se concluído
             const inputDisabled = isConcluido ? 'disabled' : '';
             const inputStyle = isConcluido ? 'background-color: #020617; color: #64748b; cursor: not-allowed;' : '';
-
+            
               htmlContent += '<select id="select-status-' + c.id + '" ' + inputDisabled + ' style="margin-top: 2px; ' + inputStyle + '">';
               htmlContent += '<div style="display: flex; gap: 8px; align-items: flex-end; margin-bottom: 6px;">';
               htmlContent += '<div style="flex: 1;">';
