@@ -527,64 +527,36 @@
               const selEmAtendimento = (c.status === 'EM ATENDIMENTO' || c.status === 'EM_ATENDIMENTO') ? 'selected' : '';
               const selConcluido = c.status === 'CONCLUIDO' ? 'selected' : '';
 
-            const isConcluido = (c.status === 'CONCLUIDO');
-            const btnBg = isConcluido ? '#334155' : '#10b981';
-            const btnText = isConcluido ? 'Concluído' : 'Guardar Alterações';
-            const btnDisabled = isConcluido ? 'disabled' : '';
-            const btnCursor = isConcluido ? 'not-allowed' : 'pointer';
+              const isConcluido = (c.status === 'CONCLUIDO');
+              const btnBg = isConcluido ? '#334155' : '#10b981';
+              const btnText = isConcluido ? 'Concluído' : 'Guardar Alterações';
+              const btnDisabled = isConcluido ? 'disabled' : '';
+              const btnCursor = isConcluido ? 'not-allowed' : 'pointer';
               
-            // Novas variáveis para bloquear o select e o input de valor se concluído
-            const inputDisabled = isConcluido ? 'disabled' : '';
-            const inputStyle = isConcluido ? 'background-color: #020617; color: #64748b; cursor: not-allowed;' : '';
-            
-              htmlContent += '<select id="select-status-' + c.id + '" ' + inputDisabled + ' style="margin-top: 2px; ' + inputStyle + '">';
+              const inputDisabled = isConcluido ? 'disabled' : '';
+              const inputStyle = isConcluido ? 'background-color: #020617; color: #64748b; cursor: not-allowed;' : '';
+
+              htmlContent += '<div style="margin-top: 10px; border-top: 1px solid #334155; padding-top: 8px;">';
               htmlContent += '<div style="display: flex; gap: 8px; align-items: flex-end; margin-bottom: 6px;">';
+              
               htmlContent += '<div style="flex: 1;">';
               htmlContent += '<label style="font-size: 11px;">Status:</label>';
-              htmlContent += '<select id="select-status-' + c.id + '" style="margin-top: 2px;">';
+              htmlContent += '<select id="select-status-' + c.id + '" ' + inputDisabled + ' style="margin-top: 2px; ' + inputStyle + '">';
               htmlContent += '<option value="ABERTO" ' + selAberto + '>ABERTO</option>';
               htmlContent += '<option value="AGUARDANDO PAGAMENTO" ' + selAguardando + '>AGUARDANDO PAGAMENTO</option>';
               htmlContent += '<option value="EM ATENDIMENTO" ' + selEmAtendimento + '>EM ATENDIMENTO</option>';
               htmlContent += '<option value="CONCLUIDO" ' + selConcluido + '>CONCLUIDO</option>';
-              htmlContent += '<input type="number" step="0.01" id="input-val-' + c.id + '" ' + inputDisabled + ' value="' + (c.valor || '0.03') + '" style="margin-top: 2px; ' + inputStyle + '" />';
+              htmlContent += '</select>';
               htmlContent += '</div>';
+
               htmlContent += '<div style="width: 100px;">';
               htmlContent += '<label style="font-size: 11px;">Valor (R$):</label>';
-              htmlContent += '<input type="number" step="0.01" id="input-val-' + c.id + '" value="' + (c.valor || '0.03') + '" style="margin-top: 2px;" />';
+              htmlContent += '<input type="number" step="0.01" id="input-val-' + c.id + '" ' + inputDisabled + ' value="' + (c.valor || '0.03') + '" style="margin-top: 2px; ' + inputStyle + '" />';
               htmlContent += '</div>';
+
               htmlContent += '</div>';
               htmlContent += '<button type="button" ' + btnDisabled + ' onclick="window.salvarDadosTecnico(\'' + c.id + '\', this)" style="background-color: ' + btnBg + '; font-size: 12px; padding: 8px 14px; border-radius: 6px; font-weight: bold; color: ' + (isConcluido ? '#94a3b8' : 'white') + '; cursor: ' + btnCursor + ';">' + btnText + '</button>';
               htmlContent += '</div>';
-            }
-
-            htmlContent += '</div>';
-          }
-          listaDiv.innerHTML = htmlContent;
-        } catch (err) {
-          listaDiv.innerHTML = '<div class="msg msg-error">' + err.message + '</div>';
-        }
-      }
-
-      document.body.addEventListener('click', function (e) {
-        const targetBtn = e.target.closest('.btn-toggle-edicao');
-        if (targetBtn) {
-          e.preventDefault();
-          const id = targetBtn.getAttribute('data-id');
-          const form = document.getElementById('form-edit-' + id);
-          if (form) {
-            form.classList.toggle('hidden');
-          }
-        }
-      });
-
-      window.salvarDadosTecnico = async function(id, btnEl) {
-        const selectEl = document.getElementById('select-status-' + id);
-        const inputEl = document.getElementById('input-val-' + id);
-        
-        if (!selectEl || !inputEl) {
-          alert('Erro: Elementos do formulário não encontrados.');
-          return;
-        }
 
         // BLOQUEIO TOTAL IMEDIATO NO PRIMEIRO CLIQUE
         if (btnEl) {
