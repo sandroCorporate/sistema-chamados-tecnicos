@@ -409,6 +409,17 @@ app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, re
       const paymentInfo = await payment.get({ id: chamado.pagamento_id });
       if (paymentInfo && paymentInfo.status === 'approved') {
         await db.query("UPDATE chamados SET status = 'EM ATENDIMENTO' WHERE id = $1", [id]);
+        
+        // Dispara o WhatsApp ao confirmar o pagamento por esta via
+        const userId = chamado.usuario_id || chamado.usuarioid;
+        const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = $1', [userId]);
+        const cliente = userRes.rows[0];
+
+        if (cliente && cliente.telefone) {
+          enviarNotificacaoWhatsApp(cliente.telefone, `🖥️ *LL TECH INFO - PAGAMENTO APROVADO*
+O pagamento do chamado *#${String(chamado.id).substring(0, 8)}* foi confirmado! Status: EM ATENDIMENTO.`);
+        }
+
         return res.json({ status: 'EM ATENDIMENTO', pago: true });
       }
     }
