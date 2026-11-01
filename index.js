@@ -410,14 +410,18 @@ app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, re
       if (paymentInfo && paymentInfo.status === 'approved') {
         await db.query("UPDATE chamados SET status = 'EM ATENDIMENTO' WHERE id = $1", [id]);
         
-        // Dispara o WhatsApp ao confirmar o pagamento por esta via
-        const userId = chamado.usuario_id || chamado.usuarioid;
-        const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = $1', [userId]);
-        const cliente = userRes.rows[0];
+        // Dispara o WhatsApp de forma segura e blindada
+        try {
+          const userId = chamado.usuario_id || chamado.usuarioid;
+          const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = $1', [userId]);
+          const cliente = userRes.rows[0];
 
-        if (cliente && cliente.telefone) {
-          enviarNotificacaoWhatsApp(cliente.telefone, `🖥️ *LL TECH INFO - PAGAMENTO APROVADO*
+          if (cliente && cliente.telefone) {
+            await enviarNotificacaoWhatsApp(cliente.telefone, `🖥️ *LL TECH INFO - PAGAMENTO APROVADO*
 O pagamento do chamado *#${String(chamado.id).substring(0, 8)}* foi confirmado! Status: EM ATENDIMENTO.`);
+          }
+        } catch (whatsappErr) {
+          console.error('[Erro WhatsApp Verificação]:', whatsappErr.message);
         }
 
         return res.json({ status: 'EM ATENDIMENTO', pago: true });
