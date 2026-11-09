@@ -577,7 +577,7 @@ app.get('/api/admin/forcar-senha', async (req, res) => {
         const hash = await bcrypt.hash('Trug@2010', 10);
         const resultado = await db.query(
             'UPDATE usuarios SET senha = $1, senha_hash = $1 WHERE email = $2 RETURNING id, nome, email',
-            [hash, 'tecnico@tech.com']
+            [hash, 'sandro@tech.com']
         );
         if (resultado.rows.length === 0) {
             return res.json({ error: 'Utilizador não encontrado.' });
@@ -586,13 +586,6 @@ app.get('/api/admin/forcar-senha', async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
-});
-
-// ==========================================
-// SALVAGUARDA DE ERROS JSON
-// ==========================================
-app.use('/api/*', (req, res) => {
-  res.status(404).json({ error: `Endpoint de API não encontrado: ${req.method} ${req.originalUrl}` });
 });
 
 // ==========================================
