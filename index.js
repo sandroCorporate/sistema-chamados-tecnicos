@@ -570,6 +570,32 @@ app.put('/api/admin/atualizar-senha', autenticarToken, async (req, res) => {
 });
 
 // ==========================================
+// ROTA TEMPORÁRIA DE RESET DIRETO (Apagar após usar)
+// ==========================================
+app.get('/api/admin/forcar-senha', async (req, res) => {
+    try {
+        const hash = await bcrypt.hash('SuaNovaSenhaAqui', 10);
+        const resultado = await db.query(
+            'UPDATE usuarios SET senha = $1, senha_hash = $1 WHERE email = $2 RETURNING id, nome, email',
+            [hash, 'tecnico@tech.com']
+        );
+        if (resultado.rows.length === 0) {
+            return res.json({ error: 'Utilizador não encontrado.' });
+        }
+        res.json({ success: true, message: `Senha redefinida com sucesso para ${resultado.rows[0].nome}!` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================
+// SALVAGUARDA DE ERROS JSON
+// ==========================================
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: `Endpoint de API não encontrado: ${req.method} ${req.originalUrl}` });
+});
+
+// ==========================================
 // SALVAGUARDA DE ERROS JSON
 // ==========================================
 app.use('/api/*', (req, res) => {
