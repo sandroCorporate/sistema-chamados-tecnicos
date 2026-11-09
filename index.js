@@ -529,6 +529,60 @@ app.patch('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 app.put('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 app.post('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 
+// ==========================================
+// ROTA: Atualização Administrativa de Senha (Mantém Histórico e Chamados)
+// ==========================================
+app.put('/api/admin/atualizar-senha', autenticarToken, async (req, res) => {
+    const { email, novaSenha } = req.body;
+
+    if (!email || !novaSenha) {
+        return res.status(400).json({ error: 'E-mail e nova senha são obrigatórios.' });
+    }
+
+    try {
+        // Valida se quem está a chamar é técnico/admin (opcional mas recomendado)
+        const tipoUsuario = String(req.usuario?.tipo || '').toUpperCase();
+        if (tipoUsuario === 'CLIENTE') {
+            return res.status(403).json({ error: 'Acesso negado. Apenas técnicos podem atualizar senhas administrativamente.' });
+        }
+
+        // Gera o hash seguro com Bcrypt (custo 10) garantindo compatibilidade com o login
+        const hash = await bcrypt.hash(novaSenha, 10);
+
+        // ATENÇÃO: Usando 'db.query' (conforme o import do projeto) em vez de 'pool'
+        const resultado = await db.query(
+            'UPDATE usuarios SET senha = $1, senha_hash = $1 WHERE email = $2 RETURNING id, nome, email',
+            [hash, email]
+        );
+
+        if (resultado.rows.length === 0) {
+            return res.status(404).json({ error: 'Utilizador não encontrado com este e-mail.' });
+        }
+
+        res.json({ 
+            success: true, 
+            message: `Senha do utilizador ${resultado.rows[0].nome} atualizada com sucesso!` 
+        });
+    } catch (err) {
+        console.error('[Erro ao atualizar senha]:', err);
+        res.status(500).json({ error: 'Erro interno ao atualizar a senha: ' + err.message });
+    }
+});
+
+// ==========================================
+// SALVAGUARDA DE ERROS JSON
+// ==========================================
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: `Endpoint de API não encontrado: ${req.method} ${req.originalUrl}` });
+});
+
+// ==========================================
+// INICIALIZAÇÃO
+// ==========================================
+app.listen(PORT, () => {
+  console.log(`[LL TECH INFO Backend Live] Servidor rodando na porta ${PORT}`);
+});
+
 // SALVAGUARDA DE ERROS JSON
 app.use('/api/*', (req, res) => {
   res.status(404).json({ error: `Endpoint de API não encontrado: ${req.method} ${req.originalUrl}` });
