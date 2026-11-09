@@ -574,7 +574,7 @@ app.put('/api/admin/atualizar-senha', autenticarToken, async (req, res) => {
 // ==========================================
 app.get('/api/admin/forcar-senha', async (req, res) => {
     try {
-        const hash = await bcrypt.hash('SuaNovaSenhaAqui', 10);
+        const hash = await bcrypt.hash('Trug@2010', 10);
         const resultado = await db.query(
             'UPDATE usuarios SET senha = $1, senha_hash = $1 WHERE email = $2 RETURNING id, nome, email',
             [hash, 'tecnico@tech.com']
