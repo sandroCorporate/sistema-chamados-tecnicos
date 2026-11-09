@@ -549,7 +549,7 @@ app.put('/api/admin/atualizar-senha', autenticarToken, async (req, res) => {
         // Gera o hash seguro com Bcrypt (custo 10) garantindo compatibilidade com o login
         const hash = await bcrypt.hash(novaSenha, 10);
 
-        // ATENÇÃO: Usando 'db.query' (conforme o import do projeto) em vez de 'pool'
+        // Atualiza apenas a senha preservando o ID e todo o histórico de chamados atrelados
         const resultado = await db.query(
             'UPDATE usuarios SET senha = $1, senha_hash = $1 WHERE email = $2 RETURNING id, nome, email',
             [hash, email]
@@ -577,18 +577,8 @@ app.use('/api/*', (req, res) => {
 });
 
 // ==========================================
-// INICIALIZAÇÃO
+// INICIALIZAÇÃO ÚNICA
 // ==========================================
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`[LL TECH INFO Backend Live] Servidor rodando na porta ${PORT}`);
-});
-
-// SALVAGUARDA DE ERROS JSON
-app.use('/api/*', (req, res) => {
-  res.status(404).json({ error: `Endpoint de API não encontrado: ${req.method} ${req.originalUrl}` });
-});
-
-// INICIALIZAÇÃO
-app.listen(PORT, () => {
-  console.log(`Servidor LL TECH INFO rodando na porta ${PORT}`);
 });
