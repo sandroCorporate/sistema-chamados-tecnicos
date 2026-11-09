@@ -569,6 +569,7 @@ app.put('/api/admin/atualizar-senha', autenticarToken, async (req, res) => {
     }
 });
 
+/*
 // ==========================================
 // ROTA TEMPORÁRIA DE RESET DIRETO (Apagar após usar)
 // ==========================================
@@ -587,6 +588,7 @@ app.get('/api/admin/forcar-senha', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+*/
 
 // ==========================================
 // SALVAGUARDA DE ERROS JSON
