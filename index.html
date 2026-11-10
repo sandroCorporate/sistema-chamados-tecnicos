@@ -363,7 +363,6 @@
     </div>
 
     <!-- JAVASCRIPT -->
-    <script>
       let token = localStorage.getItem('token');
       let usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
 
@@ -375,12 +374,39 @@
       const regMsg = document.getElementById('reg-msg');
       const chamadoMsg = document.getElementById('chamado-msg');
 
+      function showLogin() {
+        if (screenLogin) screenLogin.classList.remove('hidden');
+        if (screenDashboard) screenDashboard.classList.add('hidden');
+      }
+
+      function showDashboard() {
+        if (screenLogin) screenLogin.classList.add('hidden');
+        if (screenDashboard) screenDashboard.classList.remove('hidden');
+        
+        const userInfo = document.getElementById('user-info');
+        if (userInfo && usuario) {
+          userInfo.innerText = usuario.nome + ' (' + usuario.tipo + ') - ' + usuario.email;
+        }
+
+        const tipoUpper = String(usuario?.tipo || '').toUpperCase();
+        const secNovoChamado = document.getElementById('section-novo-chamado');
+        if (secNovoChamado) {
+          if (tipoUpper === 'CLIENTE') {
+            secNovoChamado.classList.remove('hidden');
+          } else {
+            secNovoChamado.classList.add('hidden');
+          }
+        }
+
+        carregarChamados();
+      }
+
       if (token && usuario) {
         showDashboard();
       } else {
         showLogin();
       }
-
+    
       function showLogin() {
         screenLogin.classList.remove('hidden');
         screenDashboard.classList.add('hidden');
