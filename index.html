@@ -816,6 +816,70 @@
               alert('Ocorreu um erro ao ligar ao servidor.');
           }
       }
+
+      window.salvarEdicao = async function(e, id) {
+        e.preventDefault();
+        const titulo = document.getElementById('input-edit-titulo-' + id).value;
+        const descricao = document.getElementById('input-edit-desc-' + id).value;
+
+        try {
+          const res = await fetch('/api/chamados/' + id, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+            body: JSON.stringify({ titulo, descricao })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Erro ao editar.');
+
+          alert('Chamado editado com sucesso!');
+          carregarChamados();
+        } catch (err) {
+          alert('Erro: ' + err.message);
+        }
+      };
+
+      document.getElementById('btn-logout').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('usuario');
+        window.location.reload();
+      });
+
+      // === COLE AQUI (Por volta da linha 381, logo antes de fechar o script) ===
+      async function guardarAlteracoesPerfil() {
+          const senhaAtual = document.getElementById('senhaAtual').value;
+          const novaSenha = document.getElementById('novaSenha').value;
+          const confirmarSenha = document.getElementById('confirmarSenha').value;
+          const telefone = document.getElementById('telefone').value;
+
+          if (novaSenha !== confirmarSenha) {
+              alert('A nova senha e a confirmação não coincidem!');
+              return;
+          }
+
+          try {
+              const resposta = await fetch('/api/usuarios/me/senha', {
+                  method: 'PUT',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${localStorage.getItem('token')}`
+                  },
+                  body: JSON.stringify({ senhaAtual, novaSenha, telefone })
+              });
+
+              const dados = await resposta.json();
+
+              if (dados.success) {
+                  alert('Senha alterada com sucesso!');
+                  document.getElementById('senhaAtual').value = '';
+                  document.getElementById('novaSenha').value = '';
+                  document.getElementById('confirmarSenha').value = '';
+              } else {
+                  alert('Erro: ' + dados.error);
+              }
+          } catch (err) {
+              alert('Ocorreu um erro ao ligar ao servidor.');
+          }
+      }
     </script>
   </body>
 </html>
