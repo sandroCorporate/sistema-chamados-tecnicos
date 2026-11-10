@@ -744,5 +744,41 @@
         }
       });
     </script>
+    async function guardarAlteracoesPerfil() {
+    const senhaAtual = document.getElementById('senhaAtual').value;
+    const novaSenha = document.getElementById('novaSenha').value;
+    const confirmarSenha = document.getElementById('confirmarSenha').value;
+    const telefone = document.getElementById('telefone').value;
+
+    if (novaSenha !== confirmarSenha) {
+        alert('A nova senha e a confirmação não coincidem!');
+        return;
+    }
+
+    try {
+        const resposta = await fetch('/api/usuarios/me/senha', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}` // Token salvo no login
+            },
+            body: JSON.stringify({ senhaAtual, novaSenha, telefone })
+        });
+
+        const dados = await resposta.json();
+
+        if (dados.success) {
+            alert('Senha alterada com sucesso!');
+            // Limpa os campos de senha por segurança
+            document.getElementById('senhaAtual').value = '';
+            document.getElementById('novaSenha').value = '';
+            document.getElementById('confirmarSenha').value = '';
+        } else {
+            alert('Erro: ' + dados.error);
+        }
+    } catch (err) {
+        alert('Ocorreu um erro ao ligar ao servidor.');
+    }
+}
   </body>
 </html>
