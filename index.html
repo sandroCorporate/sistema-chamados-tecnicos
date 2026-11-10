@@ -127,8 +127,10 @@
 
     <div class="w-full max-w-5xl bg-[#0f172a]/75 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden border border-slate-800">
 
-      <div class="w-full md:col-span-6 bg-transparent p-6 md:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-800/80 relative overflow-hidden">
+      <!-- TELA DE ACESSO (LOGIN / REGISTO) -->
+      <div id="screen-login" class="flex flex-col md:grid md:grid-cols-12 min-h-[620px]">
 
+        <div class="w-full md:col-span-6 bg-transparent p-6 md:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-800/80 relative overflow-hidden">
           <div class="absolute -top-24 -left-24 w-60 h-60 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
           <div>
@@ -195,6 +197,7 @@
               <li class="flex items-center gap-2 text-white"><i class="fa-solid fa-check text-amber-400 text-xs"></i><span>Receba aviso para retirada do seu equipamento no whatsapp.</span></li>
             </ul>
           </div>
+
           <div class="pt-3 border-t border-slate-700/60 text-xs text-white space-y-1.5 bg-transparent">
             <p class="flex items-center gap-2 text-white">
               <i class="fa-brands fa-whatsapp text-emerald-400 text-sm"></i>
@@ -207,7 +210,7 @@
             <p class="text-[11px] text-slate-200">Atendimento: Seg a Sex 09h-17h | Sáb 09h-12h</p>
           </div>
         </div>
-      
+
         <div class="w-full md:col-span-6 p-6 md:p-8 flex flex-col justify-center bg-[#0f172a]/80 backdrop-blur-md">
           <div class="max-w-sm mx-auto w-full">
             <div class="text-center mb-6">
@@ -267,6 +270,7 @@
             </div>
           </div>
         </div>
+
       </div>
 
       <!-- PAINEL PRINCIPAL (DASHBOARD) -->
@@ -363,6 +367,7 @@
     </div>
 
     <!-- JAVASCRIPT -->
+    <script>
       let token = localStorage.getItem('token');
       let usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
 
@@ -406,11 +411,6 @@
       } else {
         showLogin();
       }
-    
-      function showLogin() {
-        screenLogin.classList.remove('hidden');
-        screenDashboard.classList.add('hidden');
-      }
 
       function alternarAbaAuth(aba) {
         if (aba === 'login') {
@@ -442,26 +442,10 @@
           secConfig.classList.remove('hidden');
           btnChamados.classList.remove('active');
           btnConfig.classList.add('active');
-          // Preenche o campo de telefone com o valor atual do utilizador se disponível
           if (usuario && usuario.telefone) {
             document.getElementById('telefone').value = usuario.telefone;
           }
         }
-      }
-
-      function showDashboard() {
-        screenLogin.classList.add('hidden');
-        screenDashboard.classList.remove('hidden');
-        document.getElementById('user-info').innerText = usuario.nome + ' (' + usuario.tipo + ') - ' + usuario.email;
-
-        const tipoUpper = String(usuario.tipo || '').toUpperCase();
-        if (tipoUpper === 'CLIENTE') {
-          document.getElementById('section-novo-chamado').classList.remove('hidden');
-        } else {
-          document.getElementById('section-novo-chamado').classList.add('hidden');
-        }
-
-        carregarChamados();
       }
 
       document.getElementById('form-login').addEventListener('submit', async (e) => {
@@ -650,7 +634,7 @@
 
               htmlContent += '<div style="width: 100px;">';
               htmlContent += '<label style="font-size: 11px;">Valor (R$):</label>';
-              htmlContent += '<input type="number" step="0.01" id="input-val-' + c.id + '" ' + inputDisabled + ' value="' + (c.valor || '0.03') + '" style="margin-top: 2px; ' + inputStyle + '" />';
+              htmlContent += '<input type="number" step="0.01" id="input-val-' + c.id + '" ' + inputDisabled + ' value="' + (valorNum > 0 ? valorNum.toFixed(2) : '0.03') + '" style="margin-top: 2px; ' + inputStyle + '" />';
               htmlContent += '</div>';
 
               htmlContent += '</div>';
@@ -807,70 +791,6 @@
       });
 
       // Função de Alterar Senha e Perfil (Configurações)
-      async function guardarAlteracoesPerfil() {
-          const senhaAtual = document.getElementById('senhaAtual').value;
-          const novaSenha = document.getElementById('novaSenha').value;
-          const confirmarSenha = document.getElementById('confirmarSenha').value;
-          const telefone = document.getElementById('telefone').value;
-
-          if (novaSenha !== confirmarSenha) {
-              alert('A nova senha e a confirmação não coincidem!');
-              return;
-          }
-
-          try {
-              const resposta = await fetch('/api/usuarios/me/senha', {
-                  method: 'PUT',
-                  headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${localStorage.getItem('token')}`
-                  },
-                  body: JSON.stringify({ senhaAtual, novaSenha, telefone })
-              });
-
-              const dados = await resposta.json();
-
-              if (dados.success) {
-                  alert('Senha alterada com sucesso!');
-                  document.getElementById('senhaAtual').value = '';
-                  document.getElementById('novaSenha').value = '';
-                  document.getElementById('confirmarSenha').value = '';
-              } else {
-                  alert('Erro: ' + dados.error);
-              }
-          } catch (err) {
-              alert('Ocorreu um erro ao ligar ao servidor.');
-          }
-      }
-
-      window.salvarEdicao = async function(e, id) {
-        e.preventDefault();
-        const titulo = document.getElementById('input-edit-titulo-' + id).value;
-        const descricao = document.getElementById('input-edit-desc-' + id).value;
-
-        try {
-          const res = await fetch('/api/chamados/' + id, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-            body: JSON.stringify({ titulo, descricao })
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Erro ao editar.');
-
-          alert('Chamado editado com sucesso!');
-          carregarChamados();
-        } catch (err) {
-          alert('Erro: ' + err.message);
-        }
-      };
-
-      document.getElementById('btn-logout').addEventListener('click', () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('usuario');
-        window.location.reload();
-      });
-
-      // === COLE AQUI (Por volta da linha 381, logo antes de fechar o script) ===
       async function guardarAlteracoesPerfil() {
           const senhaAtual = document.getElementById('senhaAtual').value;
           const novaSenha = document.getElementById('novaSenha').value;
