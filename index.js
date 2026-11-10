@@ -591,6 +591,46 @@ app.get('/api/admin/forcar-senha', async (req, res) => {
 */
 
 // ==========================================
+// ROTA DEFINITIVA: ALTERAR SENHA E PERFIL
+// ==========================================
+app.put('/api/usuarios/me/senha', autenticarToken, async (req, res) => {
+    try {
+        const { senhaAtual, novaSenha, telefone } = req.body;
+        const usuarioId = req.usuario.id; // Vem do token JWT
+
+        if (!novaSenha || novaSenha.length < 6) {
+            return res.status(400).json({ error: 'A nova senha deve ter pelo menos 6 caracteres.' });
+        }
+
+        // 1. Busca os dados atuais do utilizador para validar a senha antiga
+        const userQuery = await db.query('SELECT senha, senha_hash FROM usuarios WHERE id = $1', [usuarioId]);
+        if (userQuery.rows.length === 0) {
+            return res.status(404).json({ error: 'Utilizador não encontrado.' });
+        }
+
+        const usuario = userQuery.rows[0];
+        const hashAtual = usuario.senha_hash || usuario.senha;
+
+        // 2. Verifica se a senha atual informada no formulário bate com o hash da base de dados
+        const senhaValida = await bcrypt.compare(senhaAtual, hashAtual);
+        if (!senhaValida) {
+            return res.status(401).json({ error: 'A senha atual está incorreta.' });
+        }
+
+        // 3. Gera o novo hash Bcrypt e atualiza o registo
+        const novoHash = await bcrypt.hash(novaSenha, 10);
+        await db.query(
+            'UPDATE usuarios SET senha = $1, senha_hash = $1, telefone = COALESCE($2, telefone) WHERE id = $3',
+            [novoHash, telefone, usuarioId]
+        );
+
+        res.json({ success: true, message: 'Perfil e senha atualizados com sucesso!' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ==========================================
 // SALVAGUARDA DE ERROS JSON
 // ==========================================
 app.use('/api/*', (req, res) => {
