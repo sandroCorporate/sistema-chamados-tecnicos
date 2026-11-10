@@ -102,6 +102,22 @@
         font-weight: 700;
       }
 
+      .menu-nav button {
+        width: 100%;
+        text-align: left;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #94a3b8;
+        background: transparent;
+        transition: all 0.2s;
+      }
+      .menu-nav button:hover, .menu-nav button.active {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+      }
+
       @media (max-width: 768px) {
         body { padding: 8px; }
       }
@@ -113,11 +129,8 @@
 
       <!-- TELA DE ACESSO (LOGIN / REGISTO) -->
       <div id="screen-login" class="flex flex-col md:grid md:grid-cols-12 min-h-[620px]">
-
         <div class="w-full md:col-span-6 bg-transparent p-6 md:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-800/80 relative overflow-hidden">
-
           <div class="absolute -top-24 -left-24 w-60 h-60 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
-
           <div>
             <div class="flex items-center gap-3 mb-6">
               <img src="/logo.png" alt="LL TECH INFO" class="h-12 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('logo-fallback').classList.remove('hidden');" />
@@ -131,57 +144,10 @@
                 <p class="text-xs text-slate-300 font-medium">Assistência Técnica & Consultoria</p>
               </div>
             </div>
-
             <p class="text-white text-sm mb-6 leading-relaxed font-normal">
               Atendimento técnico especializado com agilidade, transparência e acompanhamento em tempo real do seu chamado.
             </p>
-
-            <div class="space-y-3 my-6">
-              <p class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">Serviços Especializados</p>
-
-              <div class="grid grid-cols-2 gap-2 text-sm">
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
-                  <i class="fa-solid fa-laptop text-amber-400 text-base w-5 text-center"></i>
-                  <span class="text-white font-medium text-xs">Notebooks</span>
-                </div>
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
-                  <i class="fa-solid fa-tablet-screen-button text-amber-400 text-base w-5 text-center"></i>
-                  <span class="text-white font-medium text-xs">Tablets</span>
-                </div>
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
-                  <i class="fa-solid fa-desktop text-amber-400 text-base w-5 text-center"></i>
-                  <span class="text-white font-medium text-xs">Computadores</span>
-                </div>
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
-                  <i class="fa-solid fa-mobile-screen-button text-amber-400 text-base w-5 text-center"></i>
-                  <span class="text-white font-medium text-xs">Smartphone</span>
-                </div>
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
-                  <i class="fa-solid fa-network-wired text-amber-400 text-base w-5 text-center"></i>
-                  <span class="text-white font-medium text-xs">Rede de PCs</span>
-                </div>
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
-                  <i class="fa-solid fa-wifi text-amber-400 text-base w-5 text-center"></i>
-                  <span class="text-white font-medium text-xs">Redes Wi-Fi</span>
-                </div>
-                <div class="col-span-2 flex items-center gap-2.5 p-2.5 rounded-lg bg-slate-900/50 border border-amber-500/30">
-                  <i class="fa-solid fa-building text-amber-400 text-base w-5 text-center"></i>
-                  <span class="text-white font-semibold text-xs">Gestão de TI & Consultoria</span>
-                </div>
-              </div>
-            </div>
           </div>
-
-          <div class="my-auto py-3 text-white text-xs leading-relaxed flex flex-col justify-center bg-transparent">
-            <ul class="space-y-2 pl-1">
-              <li class="flex items-center gap-2 text-white"><i class="fa-solid fa-check text-amber-400 text-xs"></i><span>Faça seu cadastro;</span></li>
-              <li class="flex items-center gap-2 text-white"><i class="fa-solid fa-check text-amber-400 text-xs"></i><span>Abra seu chamado;</span></li>
-              <li class="flex items-center gap-2 text-white"><i class="fa-solid fa-check text-amber-400 text-xs"></i><span>Receba informações sobre as fases do chamado no whatsapp;</span></li>
-              <li class="flex items-center gap-2 text-white"><i class="fa-solid fa-check text-amber-400 text-xs"></i><span>Receba link de pix e qrCode para pagamento no whatsapp;</span></li>
-              <li class="flex items-center gap-2 text-white"><i class="fa-solid fa-check text-amber-400 text-xs"></i><span>Receba aviso para retirada do seu equipamento no whatsapp.</span></li>
-            </ul>
-          </div>
-
           <div class="pt-4 border-t border-slate-700/60 text-xs text-white space-y-1.5 bg-transparent">
             <p class="flex items-center gap-2 text-white">
               <i class="fa-brands fa-whatsapp text-emerald-400 text-sm"></i>
@@ -191,21 +157,19 @@
               <i class="fa-solid fa-location-dot text-amber-400 text-xs"></i>
               <span class="text-white">R. São Vicente, Morro da Liberdade, 39A</span>
             </p>
-            <p class="text-[11px] text-slate-200">Atendimento: Seg a Sex 09h-17h | Sáb 09h-12h</p>
           </div>
         </div>
 
         <div class="w-full md:col-span-6 p-6 md:p-8 flex flex-col justify-center bg-[#0f172a]/80 backdrop-blur-md">
           <div class="max-w-sm mx-auto w-full">
-
             <div class="text-center mb-6">
               <h2 class="text-2xl font-bold text-white">Painel de Atendimento</h2>
               <p class="text-slate-400 text-xs mt-1">Aceda para gerir os seus chamados técnicos</p>
             </div>
 
             <div class="tab-auth flex bg-slate-900/80 p-1 rounded-xl mb-6 border border-slate-800">
-              <button type="button" id="btn-tab-login" class="active flex-1 py-2 text-xs font-semibold rounded-lg" onclick="alternarAba('login')">Entrar</button>
-              <button type="button" id="btn-tab-registro" class="flex-1 py-2 text-xs font-semibold rounded-lg" onclick="alternarAba('registro')">Criar Conta</button>
+              <button type="button" id="btn-tab-login" class="active flex-1 py-2 text-xs font-semibold rounded-lg" onclick="alternarAbaAuth('login')">Entrar</button>
+              <button type="button" id="btn-tab-registro" class="flex-1 py-2 text-xs font-semibold rounded-lg" onclick="alternarAbaAuth('registro')">Criar Conta</button>
             </div>
 
             <div id="box-login">
@@ -251,16 +215,10 @@
                 <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm shadow-lg mt-2">
                   Concluir Registo
                 </button>
-                <div style="margin-top: 15px; text-align: center;">
-                  <p style="font-size: 11px; color: #94a3b8; line-height: 1.4; margin: 0; padding: 0 10px;">
-                  🔒 Dados necessários para que o processo de mensageria via WhatsApp e NFS-e seja realizado com segurança, gerando notificações em tempo real.
-                </p>
-                </div>
               </form>
             </div>
           </div>
         </div>
-
       </div>
 
       <!-- PAINEL PRINCIPAL (DASHBOARD) -->
@@ -278,33 +236,70 @@
           </button>
         </div>
 
-        <div id="section-novo-chamado" class="card mb-6">
-          <h4 class="text-base font-bold text-white mb-3">Abrir Novo Chamado</h4>
-          <div id="chamado-msg"></div>
-          <form id="form-chamado" class="space-y-4">
-            <div class="form-group">
-              <label>Título</label>
-              <input type="text" id="chamado-titulo" required placeholder="Ex: Substituição de Disco Rígido" />
-            </div>
-            <div class="form-group">
-              <label>Descrição</label>
-              <textarea id="chamado-descricao" rows="3" required placeholder="Descreva detalhadamente o problema..."></textarea>
-            </div>
-            <div class="form-group">
-              <label>Foto da Etiqueta do Equipamento (S/N ou P/N)</label>
-              <input type="file" id="chamado-etiqueta-foto" accept="image/*" capture="environment" />
-              <small style="color: #64748b; font-size: 11px;">Tire uma foto direta com o telemóvel ou carregue a imagem da etiqueta.</small>
-            </div>
-            <button type="submit" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-sm">
-              Enviar Chamado
-            </button>
-          </form>
+        <!-- MENU DE NAVEGAÇÃO INTERNO -->
+        <div class="flex gap-2 mb-6 menu-nav bg-slate-900/60 p-1.5 rounded-xl border border-slate-800">
+          <button type="button" id="nav-btn-chamados" class="active" onclick="mudarSecaoPainel('chamados')"><i class="fa-solid fa-ticket mr-2"></i> Chamados</button>
+          <button type="button" id="nav-btn-config" onclick="mudarSecaoPainel('config')"><i class="fa-solid fa-gear mr-2"></i> Configurações</button>
         </div>
 
-        <h3 class="text-lg font-bold text-white mb-4">Chamados Registados</h3>
-        <div id="lista-chamados">
-          <p class="text-slate-400 text-sm">Carregando chamados...</p>
+        <!-- SEÇÃO: CHAMADOS -->
+        <div id="secao-chamados">
+          <div id="section-novo-chamado" class="card mb-6">
+            <h4 class="text-base font-bold text-white mb-3">Abrir Novo Chamado</h4>
+            <div id="chamado-msg"></div>
+            <form id="form-chamado" class="space-y-4">
+              <div class="form-group">
+                <label>Título</label>
+                <input type="text" id="chamado-titulo" required placeholder="Ex: Substituição de Disco Rígido" />
+              </div>
+              <div class="form-group">
+                <label>Descrição</label>
+                <textarea id="chamado-descricao" rows="3" required placeholder="Descreva detalhadamente o problema..."></textarea>
+              </div>
+              <div class="form-group">
+                <label>Foto da Etiqueta do Equipamento (S/N ou P/N)</label>
+                <input type="file" id="chamado-etiqueta-foto" accept="image/*" capture="environment" />
+              </div>
+              <button type="submit" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-sm">
+                Enviar Chamado
+              </button>
+            </form>
+          </div>
+
+          <h3 class="text-lg font-bold text-white mb-4">Chamados Registados</h3>
+          <div id="lista-chamados">
+            <p class="text-slate-400 text-sm">Carregando chamados...</p>
+          </div>
         </div>
+
+        <!-- SEÇÃO: CONFIGURAÇÕES (Perfil & Senha) -->
+        <div id="secao-config" class="hidden">
+          <div class="card max-w-xl mx-auto">
+            <h4 class="text-base font-bold text-white mb-4"><i class="fa-solid fa-user-shield text-amber-500 mr-2"></i> Meu Perfil & Segurança</h4>
+            <div class="space-y-4">
+              <div class="form-group">
+                <label>Telefone / WhatsApp</label>
+                <input type="text" id="telefone" placeholder="92986040401" />
+              </div>
+              <div class="form-group">
+                <label>Senha Atual</label>
+                <input type="password" id="senhaAtual" placeholder="••••••••" />
+              </div>
+              <div class="form-group">
+                <label>Nova Senha (mínimo 6 caracteres)</label>
+                <input type="password" id="novaSenha" placeholder="••••••••" />
+              </div>
+              <div class="form-group">
+                <label>Confirmar Nova Senha</label>
+                <input type="password" id="confirmarSenha" placeholder="••••••••" />
+              </div>
+              <button type="button" onclick="guardarAlteracoesPerfil()" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-sm">
+                Guardar Alterações
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -343,7 +338,7 @@
         screenDashboard.classList.add('hidden');
       }
 
-      function alternarAba(aba) {
+      function alternarAbaAuth(aba) {
         if (aba === 'login') {
           document.getElementById('box-login').classList.remove('hidden');
           document.getElementById('box-registro').classList.add('hidden');
@@ -354,6 +349,29 @@
           document.getElementById('box-registro').classList.remove('hidden');
           document.getElementById('btn-tab-login').classList.remove('active');
           document.getElementById('btn-tab-registro').classList.add('active');
+        }
+      }
+
+      function mudarSecaoPainel(secao) {
+        const secChamados = document.getElementById('secao-chamados');
+        const secConfig = document.getElementById('secao-config');
+        const btnChamados = document.getElementById('nav-btn-chamados');
+        const btnConfig = document.getElementById('nav-btn-config');
+
+        if (secao === 'chamados') {
+          secChamados.classList.remove('hidden');
+          secConfig.classList.add('hidden');
+          btnChamados.classList.add('active');
+          btnConfig.classList.remove('active');
+        } else {
+          secChamados.classList.add('hidden');
+          secConfig.classList.remove('hidden');
+          btnChamados.classList.remove('active');
+          btnConfig.classList.add('active');
+          // Preenche o campo de telefone com o valor atual do utilizador se disponível
+          if (usuario && usuario.telefone) {
+            document.getElementById('telefone').value = usuario.telefone;
+          }
         }
       }
 
@@ -418,7 +436,7 @@
 
           regMsg.innerHTML = '<div class="msg msg-success">Conta criada com sucesso! Faça login para continuar.</div>';
           document.getElementById('form-registro').reset();
-          setTimeout(() => alternarAba('login'), 2000);
+          setTimeout(() => alternarAbaAuth('login'), 2000);
         } catch (err) {
           regMsg.innerHTML = '<div class="msg msg-error">' + err.message + '</div>';
         }
@@ -571,137 +589,8 @@
 
           listaDiv.innerHTML = htmlContent;
         } catch (err) {
-          listaDiv.innerHTML = '<div class="msg msg-error">' + err.message + '</div>';
+          listaDiv.innerHTML = '<p class="text-rose-400 text-sm">Erro ao carregar chamados: ' + err.message + '</p>';
         }
-      }
-
-      window.salvarDadosTecnico = async function (id, btnEl) {
-        const selectEl = document.getElementById('select-status-' + id);
-        const inputEl = document.getElementById('input-val-' + id);
-
-        if (chamadosProcessados.has(id)) return;
-
-        if (btnEl) {
-          btnEl.disabled = true;
-          btnEl.style.backgroundColor = '#64748b';
-          btnEl.style.opacity = '0.5';
-          btnEl.style.cursor = 'not-allowed';
-          btnEl.innerText = 'A guardar...';
-        }
-
-        chamadosProcessados.add(id);
-
-        const novoStatus = selectEl.value;
-        const novoValor = parseFloat(inputEl.value) || 0.03;
-
-        try {
-          const res = await fetch('/api/chamados/' + id, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-            body: JSON.stringify({ status: novoStatus, valor: novoValor }),
-          });
-
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Erro ao atualizar chamado.');
-
-          alert('Alterações salvas com sucesso!');
-          await carregarChamados();
-        } catch (err) {
-          alert('Erro ao guardar: ' + err.message);
-          chamadosProcessados.delete(id);
-          if (btnEl) {
-            btnEl.disabled = false;
-            btnEl.style.backgroundColor = '#10b981';
-            btnEl.style.opacity = '1';
-            btnEl.style.cursor = 'pointer';
-            btnEl.innerText = 'Guardar Alterações';
-          }
-        }
-      };
-
-      window.gerarPix = async function (id, valorPadrao) {
-        const valorInput = prompt('Confirme o valor do atendimento para pagamento Pix (R$):', valorPadrao);
-        if (!valorInput) return;
-
-        try {
-          const res = await fetch('/api/chamados/' + id + '/pagar-pix', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-            body: JSON.stringify({ valor: parseFloat(valorInput) }),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Erro ao gerar Pix.');
-
-          document.getElementById('pix-img-' + id).src = 'data:image/png;base64,' + data.qrCodeBase64;
-          document.getElementById('pix-copia-' + id).value = data.qrCode;
-          document.getElementById('pix-container-' + id).classList.remove('hidden');
-          alert('Cobrança Pix gerada com sucesso!');
-        } catch (err) {
-          alert(err.message);
-        }
-      };
-
-      window.copiarPix = function (id) {
-        const textarea = document.getElementById('pix-copia-' + id);
-        textarea.select();
-        document.execCommand('copy');
-        alert('Código Pix copiado para a área de transferência!');
-      };
-
-      window.salvarEdicao = async function (event, id) {
-        event.preventDefault();
-        const inputTitulo = document.getElementById('input-edit-titulo-' + id);
-        const inputDesc = document.getElementById('input-edit-desc-' + id);
-
-        try {
-          const res = await fetch('/api/chamados/' + id + '/editar', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-            body: JSON.stringify({ titulo: inputTitulo.value, descricao: inputDesc.value }),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Erro ao guardar alterações.');
-
-          alert('Chamado atualizado com sucesso!');
-          await carregarChamados();
-        } catch (err) {
-          alert('Erro ao salvar: ' + err.message);
-        }
-      };
-
-      document.getElementById('btn-logout').addEventListener('click', () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('usuario');
-        token = null;
-        usuario = null;
-        showLogin();
-      });
-
-      function abrirZoomEtiqueta(base64Str) {
-        const modal = document.getElementById('modal-zoom');
-        const imgPreview = document.getElementById('img-zoom-preview');
-        if (modal && imgPreview) {
-          imgPreview.src = base64Str;
-          modal.classList.remove('hidden');
-        }
-      }
-
-      function fecharZoomEtiqueta() {
-        const modal = document.getElementById('modal-zoom');
-        const imgPreview = document.getElementById('img-zoom-preview');
-        if (modal && imgPreview) {
-          modal.classList.add('hidden');
-          imgPreview.src = '';
-        }
-      }
-
-      function converterArquivoParaBase64(file) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = error => reject(error);
-        });
       }
 
       document.getElementById('form-chamado').addEventListener('submit', async (e) => {
@@ -709,22 +598,19 @@
         chamadoMsg.innerHTML = '';
         const titulo = document.getElementById('chamado-titulo').value;
         const descricao = document.getElementById('chamado-descricao').value;
-        const inputFile = document.getElementById('chamado-etiqueta-foto');
-        const btnSubmit = e.target.querySelector('button[type="submit"]');
+        const inputFoto = document.getElementById('chamado-etiqueta-foto');
 
         let etiquetaBase64 = null;
-        if (inputFile.files && inputFile.files[0]) {
-          try {
-            btnSubmit.disabled = true;
-            btnSubmit.innerText = 'Processando imagem...';
-            etiquetaBase64 = await converterArquivoParaBase64(inputFile.files[0]);
-          } catch (err) {
-            console.error('Erro ao processar imagem da etiqueta:', err);
-          }
+        if (inputFoto.files && inputFoto.files[0]) {
+          const file = inputFoto.files[0];
+          etiquetaBase64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(file);
+          });
         }
 
         try {
-          btnSubmit.innerText = 'A enviar chamado...';
           const res = await fetch('/api/chamados', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
@@ -734,51 +620,154 @@
           if (!res.ok) throw new Error(data.error || 'Erro ao criar chamado.');
 
           document.getElementById('form-chamado').reset();
-          chamadoMsg.innerHTML = '<div class="msg msg-success">Chamado aberto com sucesso com a etiqueta anexada!</div>';
+          chamadoMsg.innerHTML = '<div class="msg msg-success">Chamado aberto com sucesso!</div>';
           carregarChamados();
         } catch (err) {
           chamadoMsg.innerHTML = '<div class="msg msg-error">' + err.message + '</div>';
-        } finally {
-          btnSubmit.disabled = false;
-          btnSubmit.innerText = 'Enviar Chamado';
         }
       });
-    </script>
-    async function guardarAlteracoesPerfil() {
-    const senhaAtual = document.getElementById('senhaAtual').value;
-    const novaSenha = document.getElementById('novaSenha').value;
-    const confirmarSenha = document.getElementById('confirmarSenha').value;
-    const telefone = document.getElementById('telefone').value;
 
-    if (novaSenha !== confirmarSenha) {
-        alert('A nova senha e a confirmação não coincidem!');
-        return;
-    }
-
-    try {
-        const resposta = await fetch('/api/usuarios/me/senha', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}` // Token salvo no login
-            },
-            body: JSON.stringify({ senhaAtual, novaSenha, telefone })
-        });
-
-        const dados = await resposta.json();
-
-        if (dados.success) {
-            alert('Senha alterada com sucesso!');
-            // Limpa os campos de senha por segurança
-            document.getElementById('senhaAtual').value = '';
-            document.getElementById('novaSenha').value = '';
-            document.getElementById('confirmarSenha').value = '';
-        } else {
-            alert('Erro: ' + dados.error);
+      window.gerarPix = async function(id, valorSugerido) {
+        const valorInput = prompt('Confirme ou ajuste o valor da cobrança Pix (R$):', valorSugerido);
+        if (!valorInput) return;
+        const valor = parseFloat(valorInput.replace(',', '.'));
+        if (isNaN(valor) || valor <= 0) {
+          alert('Valor inválido.');
+          return;
         }
-    } catch (err) {
-        alert('Ocorreu um erro ao ligar ao servidor.');
-    }
-}
+
+        try {
+          const res = await fetch('/api/chamados/' + id + '/pagar-pix', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+            body: JSON.stringify({ valor })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Erro ao gerar Pix.');
+
+          document.getElementById('pix-img-' + id).src = 'data:image/png;base64,' + data.qrCodeBase64;
+          document.getElementById('pix-copia-' + id).value = data.qrCode;
+          document.getElementById('pix-container-' + id).classList.remove('hidden');
+          alert('Cobrança Pix gerada com sucesso!');
+          carregarChamados();
+        } catch (err) {
+          alert('Erro: ' + err.message);
+        }
+      };
+
+      window.copiarPix = function(id) {
+        const copyText = document.getElementById('pix-copia-' + id);
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value);
+        alert('Código Pix copiado para a área de transferência!');
+      };
+
+      window.salvarDadosTecnico = async function(id, btn) {
+        const status = document.getElementById('select-status-' + id).value;
+        const valor = document.getElementById('input-val-' + id).value;
+
+        try {
+          btn.disabled = true;
+          const res = await fetch('/api/chamados/' + id, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+            body: JSON.stringify({ status, valor: parseFloat(valor) })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Erro ao atualizar.');
+
+          alert('Chamado atualizado com sucesso!');
+          carregarChamados();
+        } catch (err) {
+          alert('Erro: ' + err.message);
+          btn.disabled = false;
+        }
+      };
+
+      window.abrirZoomEtiqueta = function(url) {
+        document.getElementById('img-zoom-preview').src = url;
+        document.getElementById('modal-zoom').classList.remove('hidden');
+      };
+
+      window.fecharZoomEtiqueta = function() {
+        document.getElementById('modal-zoom').classList.add('hidden');
+        document.getElementById('img-zoom-preview').src = '';
+      };
+
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('btn-toggle-edicao')) {
+          const id = e.target.getAttribute('data-id');
+          const formEdit = document.getElementById('form-edit-' + id);
+          if (formEdit) {
+            formEdit.classList.toggle('hidden');
+          }
+        }
+      });
+
+      window.salvarEdicao = async function(e, id) {
+        e.preventDefault();
+        const titulo = document.getElementById('input-edit-titulo-' + id).value;
+        const descricao = document.getElementById('input-edit-desc-' + id).value;
+
+        try {
+          const res = await fetch('/api/chamados/' + id, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+            body: JSON.stringify({ titulo, descricao })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Erro ao editar.');
+
+          alert('Chamado editado com sucesso!');
+          carregarChamados();
+        } catch (err) {
+          alert('Erro: ' + err.message);
+        }
+      };
+
+      document.getElementById('btn-logout').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('usuario');
+        window.location.reload();
+      });
+
+      // Função de Alterar Senha e Perfil (Configurações)
+      async function guardarAlteracoesPerfil() {
+          const senhaAtual = document.getElementById('senhaAtual').value;
+          const novaSenha = document.getElementById('novaSenha').value;
+          const confirmarSenha = document.getElementById('confirmarSenha').value;
+          const telefone = document.getElementById('telefone').value;
+
+          if (novaSenha !== confirmarSenha) {
+              alert('A nova senha e a confirmação não coincidem!');
+              return;
+          }
+
+          try {
+              const resposta = await fetch('/api/usuarios/me/senha', {
+                  method: 'PUT',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${localStorage.getItem('token')}`
+                  },
+                  body: JSON.stringify({ senhaAtual, novaSenha, telefone })
+              });
+
+              const dados = await resposta.json();
+
+              if (dados.success) {
+                  alert('Senha alterada com sucesso!');
+                  document.getElementById('senhaAtual').value = '';
+                  document.getElementById('novaSenha').value = '';
+                  document.getElementById('confirmarSenha').value = '';
+              } else {
+                  alert('Erro: ' + dados.error);
+              }
+          } catch (err) {
+              alert('Ocorreu um erro ao ligar ao servidor.');
+          }
+      }
+    </script>
   </body>
 </html>
