@@ -127,6 +127,29 @@ app.post('/api/registro', async (req, res) => {
   }
 });
 
+// Rota pública para a Política de Privacidade (LGPD)
+app.get('/privacidade', (req, res) => {
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+            <meta charset="UTF-8">
+            <title>Política de Privacidade - LL TECH INFO</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+        </head>
+        <body class="bg-[#0b1329] text-slate-100 p-8 min-h-screen flex justify-center items-center">
+            <div class="max-w-2xl bg-slate-900/90 p-8 rounded-2xl border border-slate-800 shadow-2xl">
+                <h1 class="text-2xl font-bold text-amber-500 mb-4">Política de Privacidade & LGPD</h1>
+                <p class="text-sm text-slate-300 leading-relaxed mb-4">
+                    A <strong>LL TECH INFO</strong> preza pela segurança e privacidade dos dados dos seus clientes. Os dados recolhidos no registo (como nome, e-mail, telefone e documento) são utilizados exclusivamente para a gestão de chamados técnicos e comunicações de atendimento via WhatsApp, em total conformidade com a Lei Geral de Proteção de Dados (LGPD).
+                </p>
+                <a href="/" class="inline-block px-4 py-2 bg-amber-500 text-slate-950 font-bold text-xs rounded-lg mt-4">Voltar ao Portal</a>
+            </div>
+        </body>
+        </html>
+    `);
+});
+
 app.post('/api/login', async (req, res) => {
   try {
     const { email, senha } = req.body;
