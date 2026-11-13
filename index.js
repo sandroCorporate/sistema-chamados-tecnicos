@@ -166,15 +166,25 @@ app.post('/api/login', async (req, res) => {
     }
 
     const tipo = usuario.tipo || usuario.perfil || 'CLIENTE';
-    const payload = { id: usuario.id, email: usuario.email, tipo };
+    const empresaId = usuario.empresa_id || 'a0000000-0000-0000-0000-000000000001';
+    
+    // Payload JWT agora inclui o empresa_id para contexto multi-tenant
+    const payload = { id: usuario.id, email: usuario.email, tipo, empresa_id: empresaId };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '8h' });
 
     res.json({
       token,
-      usuario: { id: usuario.id, nome: usuario.nome, email: usuario.email, tipo, telefone: usuario.telefone },
+      usuario: { 
+        id: usuario.id, 
+        nome: usuario.nome, 
+        email: usuario.email, 
+        tipo, 
+        telefone: usuario.telefone,
+        empresa_id: empresaId 
+      },
     });
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao realizar login.' });
+    res.status(500).json({ error: 'Erro ao realizar login: ' + error.message });
   }
 });
 
