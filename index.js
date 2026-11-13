@@ -225,14 +225,15 @@ app.post('/api/usuarios/:id/trocar-senha', autenticarToken, async (req, res) => 
 });
 
 // ==========================================
-// ROTA: Buscar Chamados (Com JOIN seguro para Técnicos)
+// ROTA: Buscar Chamados (Filtrado por Empresa/Tenant)
 // ==========================================
 app.get('/api/chamados', autenticarToken, async (req, res) => {
   try {
     const tipoUsuario = String(req.usuario.tipo || '').toUpperCase();
+    const empresaId = req.usuario.empresa_id || 'a0000000-0000-0000-0000-000000000001';
     
     if (tipoUsuario !== 'CLIENTE') {
-      // Query blindada que deteta a coluna de ligação existente na tabela chamados
+      // Query blindada para técnicos filtrada estritamente pelo tenant (empresa_id)
       const queryTecnico = `
         SELECT c.*, 
                u.nome AS cliente_nome, 
@@ -240,34 +241,37 @@ app.get('/api/chamados', autenticarToken, async (req, res) => {
                u.telefone AS cliente_telefone 
         FROM chamados c
         LEFT JOIN usuarios u ON u.id = c.usuario_id
+        WHERE c.empresa_id = $1
         ORDER BY c.criado_em DESC
       `;
       try {
-        const { rows } = await db.query(queryTecnico);
+        const { rows } = await db.query(queryTecnico, [empresaId]);
         return res.json(rows);
       } catch (e1) {
-        // Fallback caso a coluna seja usuarioid
+        // Fallback caso utilize usuarioid
         const queryTecnicoFallback = `
           SELECT c.*, 
                  u.nome AS cliente_nome, 
                  u.email AS cliente_email, 
                  u.telefone AS cliente_telefone 
-          FROM chamados c
-          LEFT JOIN usuarios u ON u.id = c.usuarioid
-          ORDER BY c.criado_em DESC
+        FROM chamados c
+        LEFT JOIN usuarios u ON u.id = c.usuarioid
+        WHERE c.empresa_id = $1
+        ORDER BY c.criado_em DESC
         `;
-        const { rows } = await db.query(queryTecnicoFallback);
+        const { rows } = await db.query(queryTecnicoFallback, [empresaId]);
         return res.json(rows);
       }
     }
 
+    // Para Clientes (filtrado pelo utilizador e pela empresa)
     let rows = [];
     try {
-      const resQuery = await db.query('SELECT * FROM chamados WHERE usuario_id = $1 ORDER BY criado_em DESC', [req.usuario.id]);
+      const resQuery = await db.query('SELECT * FROM chamados WHERE usuario_id = $1 AND empresa_id = $2 ORDER BY criado_em DESC', [req.usuario.id, empresaId]);
       rows = resQuery.rows;
     } catch (err1) {
       try {
-        const resQuery = await db.query('SELECT * FROM chamados WHERE usuarioid = $1 ORDER BY criado_em DESC', [req.usuario.id]);
+        const resQuery = await db.query('SELECT * FROM chamados WHERE usuarioid = $1 AND empresa_id = $2 ORDER BY criado_em DESC', [req.usuario.id, empresaId]);
         rows = resQuery.rows;
       } catch (err2) {
         rows = [];
@@ -281,11 +285,13 @@ app.get('/api/chamados', autenticarToken, async (req, res) => {
 });
 
 // ==========================================
-// ROTA: Abertura de Chamado
+// ROTA: Abertura de Chamado (Com Tenant ID)
 // ==========================================
 app.post('/api/chamados', autenticarToken, async (req, res) => {
   try {
     const { titulo, descricao, etiqueta_foto } = req.body;
+    const empresaId = req.usuario.empresa_id || 'a0000000-0000-0000-0000-000000000001';
+
     if (!titulo || !descricao) {
       return res.status(400).json({ error: 'Título e descrição são obrigatórios.' });
     }
@@ -295,13 +301,13 @@ app.post('/api/chamados', autenticarToken, async (req, res) => {
     let result;
     try {
       result = await db.query(
-        'INSERT INTO chamados (titulo, descricao, usuario_id, status, etiqueta_foto) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-        [titulo, descricao, req.usuario.id, 'ABERTO', etiqueta_foto || null]
+        'INSERT INTO chamados (titulo, descricao, usuario_id, status, etiqueta_foto, empresa_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+        [titulo, descricao, req.usuario.id, 'ABERTO', etiqueta_foto || null, empresaId]
       );
     } catch (err1) {
       result = await db.query(
-        'INSERT INTO chamados (titulo, descricao, usuarioid, status, etiqueta_foto) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-        [titulo, descricao, req.usuario.id, 'ABERTO', etiqueta_foto || null]
+        'INSERT INTO chamados (titulo, descricao, usuarioid, status, etiqueta_foto, empresa_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+        [titulo, descricao, req.usuario.id, 'ABERTO', etiqueta_foto || null, empresaId]
       );
     }
 
@@ -333,7 +339,7 @@ Um novo chamado foi registado no sistema!
 
     res.status(201).json({ mensagem: 'Chamado aberto com sucesso!', chamado: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao abrir chamado.' });
+    res.status(500).json({ error: 'Erro ao abrir chamado: ' + error.message });
   }
 });
 
