@@ -112,12 +112,13 @@ app.post('/api/registro', async (req, res) => {
 
   try {
     const hashSenha = await bcrypt.hash(senha, 10);
+    const empresaIdPadrao = 'a0000000-0000-0000-0000-000000000001'; // Matriz LL TECH INFO
     const query = `
-      INSERT INTO usuarios (nome, email, telefone, documento, senha, senha_hash, tipo)
-      VALUES ($1, $2, $3, $4, $5, $5, 'CLIENTE')
-      RETURNING id, nome, email, telefone, tipo;
+      INSERT INTO usuarios (nome, email, telefone, documento, senha, senha_hash, tipo, empresa_id)
+      VALUES ($1, $2, $3, $4, $5, $5, 'CLIENTE', $6)
+      RETURNING id, nome, email, telefone, tipo, empresa_id;
     `;
-    const result = await db.query(query, [nome, email, telLimpo, documento, hashSenha]);
+    const result = await db.query(query, [nome, email, telLimpo, documento, hashSenha, empresaIdPadrao]);
     return res.status(201).json({ message: 'Cliente cadastrado com sucesso!', usuario: result.rows[0] });
   } catch (error) {
     if (error.code === '23505') {
@@ -481,12 +482,18 @@ async function processarAtualizacaoChamado(req, res) {
     const { status, valor, titulo, descricao } = req.body;
     
     const tipoUsuario = String(req.usuario?.tipo || '').toUpperCase();
+    const empresaId = req.usuario.empresa_id || 'a0000000-0000-0000-0000-000000000001';
 
     const chamadoAtualRes = await db.query('SELECT * FROM chamados WHERE id = $1', [id]);
     if (chamadoAtualRes.rows.length === 0) {
       return res.status(404).json({ error: 'Chamado não encontrado.' });
     }
     const chamadoAtual = chamadoAtualRes.rows[0];
+
+    // Validação estrita de Tenant: impede acesso cruzado entre empresas
+    if (chamadoAtual.empresa_id && chamadoAtual.empresa_id !== empresaId) {
+      return res.status(403).json({ error: 'Acesso negado. O chamado pertence a outra organização.' });
+    }
 
     if (tipoUsuario === 'CLIENTE') {
       const donoId = chamadoAtual.usuario_id || chamadoAtual.usuarioid;
