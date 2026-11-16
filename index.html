@@ -439,7 +439,6 @@
 
         const tipoUpper = String(usuario?.tipo || '').toUpperCase();
 
-        // Atualiza dinamicamente a empresa com base no utilizador logado
         const empresaInfo = document.getElementById('empresa-info');
         if (empresaInfo && usuario) {
           if (usuario.empresa_id === 'a0000000-0000-0000-0000-000000000001') {
@@ -589,7 +588,6 @@
 
           await verificarPagamentosPendentes(chamados);
 
-          // Calcular métricas para os cartões executivos superiores
           let totalCount = chamados.length;
           let abertosCount = 0;
           let concluidosCount = 0;
@@ -656,14 +654,22 @@
               htmlContent += '<small style="color: #38bdf8; display: block; font-weight: bold; margin-top: 4px; font-size: 12px;">Valor: R$ ' + valorNum.toFixed(2) + '</small>';
             }
 
-            htmlContent += '<div id="pix-container-' + c.id + '" class="pix-box hidden">';
+            // Bloco do Pix inteligente, persistente e corrigido para evitar conflito de toque
+            const isAguardando = (c.status === 'AGUARDANDO PAGAMENTO' || c.status === 'AGUARDANDO_PAGAMENTO');
+            const temPixSalvo = c.pagamento_id && c.qr_code;
+
+            htmlContent += '<div id="pix-container-' + c.id + '" class="pix-box ' + (isAguardando ? '' : 'hidden') + '">';
             htmlContent += '<p style="font-size: 12px; font-weight: bold; color: #f97316; margin-bottom: 6px;">Escaneie o QR Code ou copie o Pix:</p>';
-            htmlContent += '<img id="pix-img-' + c.id + '" src="" alt="QR Code Pix" style="max-width: 150px; display: block; margin: 0 auto 8px auto; border-radius: 6px;" />';
-            htmlContent += '<textarea id="pix-copia-' + c.id + '" rows="2" style="font-size: 11px; resize: none; background: #020617;" readonly></textarea>';
-            htmlContent += '<button type="button" onclick="window.copiarPix(\'' + c.id + '\')" style="margin-top: 8px; background-color: #f97316; font-size: 12px; padding: 8px; width: 100%; border-radius: 6px; font-weight: bold; color: #fff; cursor: pointer;">Copiar Código Pix</button>';
+            
+            if (temPixSalvo) {
+              htmlContent += '<img id="pix-img-' + c.id + '" src="data:image/png;base64,' + (c.qr_code_base64 || '') + '" alt="QR Code Pix" style="max-width: 150px; display: block; margin: 0 auto 8px auto; border-radius: 6px;" />';
+              htmlContent += '<textarea id="pix-copia-' + c.id + '" rows="2" style="font-size: 11px; resize: none; background: #020617;" readonly>' + (c.qr_code || '') + '</textarea>';
+              htmlContent += '<button type="button" onclick="window.copiarPix(\'' + c.id + '\')" style="margin-top: 8px; background-color: #f97316; font-size: 12px; padding: 8px; width: 100%; border-radius: 6px; font-weight: bold; color: #fff; cursor: pointer;">Copiar Código Pix</button>';
+            } else {
+              htmlContent += '<button type="button" onclick="window.gerarPix(\'' + c.id + '\', ' + (valorNum || 0.03) + ')" style="background-color: #f97316; font-size: 12px; padding: 10px; width: 100%; border-radius: 6px; font-weight: bold; color: #fff; cursor: pointer;"><i class="fa-solid fa-qrcode mr-1"></i> Gerar Pagamento Pix (R$ ' + Number(valorNum || 0.03).toFixed(2) + ')</button>';
+            }
             htmlContent += '</div>';
 
-            // Regra corrigida: Permite edição em ABERTO ou AGUARDANDO PAGAMENTO. Bloqueia apenas após confirmação efetiva (EM ATENDIMENTO / CONCLUIDO).
             const statusAtualUpper = String(c.status || '').toUpperCase();
             if (isCliente && (statusAtualUpper === 'ABERTO' || statusAtualUpper === 'AGUARDANDO PAGAMENTO' || statusAtualUpper === 'AGUARDANDO_PAGAMENTO')) {
               htmlContent += '<div style="margin-top: 10px; border-top: 1px solid #334155; padding-top: 8px; display: flex; gap: 5px;">';
@@ -677,12 +683,6 @@
               htmlContent += '<button type="button" class="btn-toggle-edicao" data-id="' + c.id + '" style="background-color: #64748b; width: auto; padding: 6px 14px; font-size: 12px; font-weight: bold; border-radius: 6px; cursor: pointer;">Cancelar</button>';
               htmlContent += '</div>';
               htmlContent += '</form>';
-            }
-
-            if (isCliente && (c.status === 'AGUARDANDO_PAGAMENTO' || c.status === 'AGUARDANDO PAGAMENTO') && !c.pagamento_id) {
-              htmlContent += '<div style="margin-top: 10px; border-top: 1px solid #334155; padding-top: 8px;">';
-              htmlContent += '<button type="button" onclick="window.gerarPix(\'' + c.id + '\',' + (c.valor || 0.03) + ')" style="background-color: #f97316; font-size: 12px; padding: 8px 16px; border-radius: 6px; font-weight: bold; color: white; cursor: pointer;">Pagar com Pix</button>';
-              htmlContent += '</div>';
             }
 
             if (!isCliente) {
@@ -784,9 +784,6 @@
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || 'Erro ao gerar Pix.');
 
-          document.getElementById('pix-img-' + id).src = 'data:image/png;base64,' + data.qrCodeBase64;
-          document.getElementById('pix-copia-' + id).value = data.qrCode;
-          document.getElementById('pix-container-' + id).classList.remove('hidden');
           alert('Cobrança Pix gerada com sucesso!');
           carregarChamados();
         } catch (err) {
@@ -796,10 +793,12 @@
 
       window.copiarPix = function(id) {
         const copyText = document.getElementById('pix-copia-' + id);
-        copyText.select();
-        copyText.setSelectionRange(0, 99999);
-        navigator.clipboard.writeText(copyText.value);
-        alert('Código Pix copiado para a área de transferência!');
+        if (copyText) {
+          copyText.select();
+          copyText.setSelectionRange(0, 99999);
+          navigator.clipboard.writeText(copyText.value);
+          alert('Código Pix copiado para a área de transferência!');
+        }
       };
 
       window.salvarDadosTecnico = async function(id, btn) {
