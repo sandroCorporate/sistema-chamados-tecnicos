@@ -169,7 +169,6 @@ app.post('/api/login', async (req, res) => {
     const tipo = usuario.tipo || usuario.perfil || 'CLIENTE';
     const empresaId = usuario.empresa_id || 'a0000000-0000-0000-0000-000000000001';
     
-    // Payload JWT agora inclui o empresa_id para contexto multi-tenant
     const payload = { id: usuario.id, email: usuario.email, tipo, empresa_id: empresaId };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '8h' });
 
@@ -234,7 +233,6 @@ app.get('/api/chamados', autenticarToken, async (req, res) => {
     const empresaId = req.usuario.empresa_id || 'a0000000-0000-0000-0000-000000000001';
     
     if (tipoUsuario !== 'CLIENTE') {
-      // Query blindada para técnicos filtrada estritamente pelo tenant (empresa_id)
       const queryTecnico = `
         SELECT c.*, 
                u.nome AS cliente_nome, 
@@ -249,7 +247,6 @@ app.get('/api/chamados', autenticarToken, async (req, res) => {
         const { rows } = await db.query(queryTecnico, [empresaId]);
         return res.json(rows);
       } catch (e1) {
-        // Fallback caso utilize usuarioid
         const queryTecnicoFallback = `
           SELECT c.*, 
                  u.nome AS cliente_nome, 
@@ -265,7 +262,6 @@ app.get('/api/chamados', autenticarToken, async (req, res) => {
       }
     }
 
-    // Para Clientes (filtrado pelo utilizador e pela empresa)
     let rows = [];
     try {
       const resQuery = await db.query('SELECT * FROM chamados WHERE usuario_id = $1 AND empresa_id = $2 ORDER BY criado_em DESC', [req.usuario.id, empresaId]);
@@ -450,7 +446,6 @@ app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, re
       if (paymentInfo && paymentInfo.status === 'approved') {
         await db.query("UPDATE chamados SET status = 'EM ATENDIMENTO' WHERE id = $1", [id]);
         
-        // Dispara o WhatsApp de forma segura e blindada
         try {
           const userId = chamado.usuario_id || chamado.usuarioid;
           const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = $1', [userId]);
@@ -490,7 +485,6 @@ async function processarAtualizacaoChamado(req, res) {
     }
     const chamadoAtual = chamadoAtualRes.rows[0];
 
-    // Validação estrita de Tenant: impede acesso cruzado entre empresas
     if (chamadoAtual.empresa_id && chamadoAtual.empresa_id !== empresaId) {
       return res.status(403).json({ error: 'Acesso negado. O chamado pertence a outra organização.' });
     }
@@ -501,8 +495,14 @@ async function processarAtualizacaoChamado(req, res) {
         return res.status(403).json({ error: 'Acesso negado.' });
       }
       
-      if (String(chamadoAtual.status).toUpperCase() !== 'ABERTO') {
-        return res.status(400).json({ error: 'Este chamado já não está aberto e não pode ser editado.' });
+      // =========================================================================
+      // CORREÇÃO CRUCIAL APLICADA AQUI:
+      // Permite edição se o chamado estiver ABERTO ou AGUARDANDO PAGAMENTO.
+      // Bloqueia apenas após confirmação efetiva do pagamento (EM ATENDIMENTO / CONCLUIDO).
+      // =========================================================================
+      const statusAtualUpper = String(chamadoAtual.status || '').toUpperCase();
+      if (statusAtualUpper !== 'ABERTO' && statusAtualUpper !== 'AGUARDANDO PAGAMENTO' && statusAtualUpper !== 'AGUARDANDO_PAGAMENTO') {
+        return res.status(400).json({ error: 'Este chamado já está em atendimento ou concluído e não pode ser editado.' });
       }
 
       if (status !== undefined || valor !== undefined) {
@@ -510,7 +510,7 @@ async function processarAtualizacaoChamado(req, res) {
       }
     }
 
-    if (String(chamadoAtual.status).toUpperCase() === 'CONCLUÍDO') {
+    if (String(chamadoAtual.status).toUpperCase() === 'CONCLUÍDO' || String(chamadoAtual.status).toUpperCase() === 'CONCLUIDO') {
       return res.status(400).json({ error: 'Este chamado já está concluído e não pode ser editado.' });
     }
 
@@ -576,7 +576,7 @@ app.put('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 app.post('/chamados/:id', autenticarToken, processarAtualizacaoChamado);
 
 // ==========================================
-// ROTA: Atualização Administrativa de Senha (Mantém Histórico e Chamados)
+// ROTA: Atualização Administrativa de Senha
 // ==========================================
 app.put('/api/admin/atualizar-senha', autenticarToken, async (req, res) => {
     const { email, novaSenha } = req.body;
@@ -586,16 +586,13 @@ app.put('/api/admin/atualizar-senha', autenticarToken, async (req, res) => {
     }
 
     try {
-        // Valida se quem está a chamar é técnico/admin (opcional mas recomendado)
         const tipoUsuario = String(req.usuario?.tipo || '').toUpperCase();
         if (tipoUsuario === 'CLIENTE') {
             return res.status(403).json({ error: 'Acesso negado. Apenas técnicos podem atualizar senhas administrativamente.' });
         }
 
-        // Gera o hash seguro com Bcrypt (custo 10) garantindo compatibilidade com o login
         const hash = await bcrypt.hash(novaSenha, 10);
 
-        // Atualiza apenas a senha preservando o ID e todo o histórico de chamados atrelados
         const resultado = await db.query(
             'UPDATE usuarios SET senha = $1, senha_hash = $1 WHERE email = $2 RETURNING id, nome, email',
             [hash, email]
@@ -615,40 +612,18 @@ app.put('/api/admin/atualizar-senha', autenticarToken, async (req, res) => {
     }
 });
 
-/*
-// ==========================================
-// ROTA TEMPORÁRIA DE RESET DIRETO (Apagar após usar)
-// ==========================================
-app.get('/api/admin/forcar-senha', async (req, res) => {
-    try {
-        const hash = await bcrypt.hash('Trug@2010', 10);
-        const resultado = await db.query(
-            'UPDATE usuarios SET senha = $1, senha_hash = $1 WHERE email = $2 RETURNING id, nome, email',
-            [hash, 'sandro@tech.com']
-        );
-        if (resultado.rows.length === 0) {
-            return res.json({ error: 'Utilizador não encontrado.' });
-        }
-        res.json({ success: true, message: `Senha redefinida com sucesso para ${resultado.rows[0].nome}!` });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-*/
-
 // ==========================================
 // ROTA DEFINITIVA: ALTERAR SENHA E PERFIL
 // ==========================================
 app.put('/api/usuarios/me/senha', autenticarToken, async (req, res) => {
     try {
         const { senhaAtual, novaSenha, telefone } = req.body;
-        const usuarioId = req.usuario.id; // Vem do token JWT
+        const usuarioId = req.usuario.id;
 
         if (!novaSenha || novaSenha.length < 6) {
             return res.status(400).json({ error: 'A nova senha deve ter pelo menos 6 caracteres.' });
         }
 
-        // 1. Busca os dados atuais do utilizador para validar a senha antiga
         const userQuery = await db.query('SELECT senha, senha_hash FROM usuarios WHERE id = $1', [usuarioId]);
         if (userQuery.rows.length === 0) {
             return res.status(404).json({ error: 'Utilizador não encontrado.' });
@@ -657,13 +632,11 @@ app.put('/api/usuarios/me/senha', autenticarToken, async (req, res) => {
         const usuario = userQuery.rows[0];
         const hashAtual = usuario.senha_hash || usuario.senha;
 
-        // 2. Verifica se a senha atual informada no formulário bate com o hash da base de dados
         const senhaValida = await bcrypt.compare(senhaAtual, hashAtual);
         if (!senhaValida) {
             return res.status(401).json({ error: 'A senha atual está incorreta.' });
         }
 
-        // 3. Gera o novo hash Bcrypt e atualiza o registo
         const novoHash = await bcrypt.hash(novaSenha, 10);
         await db.query(
             'UPDATE usuarios SET senha = $1, senha_hash = $1, telefone = COALESCE($2, telefone) WHERE id = $3',
