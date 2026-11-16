@@ -377,9 +377,13 @@ app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
     const qrCodeBase64 = response?.point_of_interaction?.transaction_data?.qr_code_base64;
     const pagamentoId = response?.id;
 
+    // Garante colunas na tabela e salva os dados do Pix na base de dados
+    try { await db.query('ALTER TABLE chamados ADD COLUMN IF NOT EXISTS qr_code TEXT;'); } catch (e) {}
+    try { await db.query('ALTER TABLE chamados ADD COLUMN IF NOT EXISTS qr_code_base64 TEXT;'); } catch (e) {}
+
     await db.query(
-      'UPDATE chamados SET status = $1, valor = $2, pagamento_id = $3 WHERE id = $4',
-      ['AGUARDANDO PAGAMENTO', valor, String(pagamentoId), id]
+      'UPDATE chamados SET status = $1, valor = $2, pagamento_id = $3, qr_code = $4, qr_code_base64 = $5 WHERE id = $6',
+      ['AGUARDANDO PAGAMENTO', valor, String(pagamentoId), qrCode, qrCodeBase64, id]
     );
 
     if (cliente && cliente.telefone) {
@@ -495,11 +499,6 @@ async function processarAtualizacaoChamado(req, res) {
         return res.status(403).json({ error: 'Acesso negado.' });
       }
       
-      // =========================================================================
-      // CORREÇÃO CRUCIAL APLICADA AQUI:
-      // Permite edição se o chamado estiver ABERTO ou AGUARDANDO PAGAMENTO.
-      // Bloqueia apenas após confirmação efetiva do pagamento (EM ATENDIMENTO / CONCLUIDO).
-      // =========================================================================
       const statusAtualUpper = String(chamadoAtual.status || '').toUpperCase();
       if (statusAtualUpper !== 'ABERTO' && statusAtualUpper !== 'AGUARDANDO PAGAMENTO' && statusAtualUpper !== 'AGUARDANDO_PAGAMENTO') {
         return res.status(400).json({ error: 'Este chamado já está em atendimento ou concluído e não pode ser editado.' });
