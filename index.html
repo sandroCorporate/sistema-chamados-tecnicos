@@ -135,7 +135,8 @@
 
           <div>
             <div class="flex items-center gap-3 mb-6">
-              <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 text-2xl">
+              <img src="/logo.png" alt="LL TECH INFO" class="h-12 w-auto object-contain" onerror="this.style.display='none'; document.getElementById('logo-fallback').classList.remove('hidden');" />
+              <div id="logo-fallback" class="hidden w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 text-2xl">
                 <i class="fa-solid fa-gears"></i>
               </div>
               <div>
@@ -186,7 +187,7 @@
             </div>
           </div>
 
-          <!-- Textos complementares / Passo a passo restaurados -->
+          <!-- Textos complementares / Passo a passo -->
           <div class="py-2 text-white text-xs leading-relaxed flex flex-col justify-center bg-transparent my-2">
             <p class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-1.5">Como Funciona</p>
             <ul class="space-y-1.5 pl-1">
@@ -266,7 +267,7 @@
                   Concluir Registo
                 </button>
 
-                <!-- Aviso LGPD Restaurado -->
+                <!-- Aviso LGPD -->
                 <div class="mt-3 text-center">
                   <p class="text-[11px] text-slate-400">
                     Ao criar uma conta, concorda com a nossa 
@@ -283,13 +284,11 @@
 
       <!-- PAINEL PRINCIPAL (DASHBOARD EXECUTIVO) -->
       <div id="screen-dashboard" class="p-6 md:p-8 hidden bg-[#0f172a]/90 backdrop-blur-md">
-        
+
         <!-- CABEÇALHO EXECUTIVO COM ORGANIZAÇÃO -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-4 mb-6 border-b border-slate-800 gap-4">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 text-xl">
-              <i class="fa-solid fa-building-shield"></i>
-            </div>
+            <img src="/logo.png" alt="LL TECH INFO" class="h-10 w-auto object-contain" onerror="this.style.display='none'" />
             <div>
               <h3 class="text-xl font-bold text-white">Painel Executivo de Atendimento</h3>
               <p id="user-info" class="text-xs text-slate-400"></p>
@@ -432,14 +431,14 @@
       function showDashboard() {
         if (screenLogin) screenLogin.classList.add('hidden');
         if (screenDashboard) screenDashboard.classList.remove('hidden');
-        
+
         const userInfo = document.getElementById('user-info');
         if (userInfo && usuario) {
           userInfo.innerText = usuario.nome + ' (' + usuario.tipo + ') - ' + usuario.email;
         }
 
         const tipoUpper = String(usuario?.tipo || '').toUpperCase();
-		
+
         // Atualiza dinamicamente a empresa com base no utilizador logado
         const empresaInfo = document.getElementById('empresa-info');
         if (empresaInfo && usuario) {
@@ -449,7 +448,7 @@
             empresaInfo.innerText = `Organização ID: ${String(usuario.empresa_id || '').substring(0, 8)}...`;
           }
         }
-		
+
         const secNovoChamado = document.getElementById('section-novo-chamado');
         if (secNovoChamado) {
           if (tipoUpper === 'CLIENTE') {
@@ -664,7 +663,9 @@
             htmlContent += '<button type="button" onclick="window.copiarPix(\'' + c.id + '\')" style="margin-top: 8px; background-color: #f97316; font-size: 12px; padding: 8px; width: 100%; border-radius: 6px; font-weight: bold; color: #fff; cursor: pointer;">Copiar Código Pix</button>';
             htmlContent += '</div>';
 
-            if (isCliente && c.status === 'ABERTO') {
+            // Regra corrigida: Permite edição em ABERTO ou AGUARDANDO PAGAMENTO. Bloqueia apenas após confirmação efetiva (EM ATENDIMENTO / CONCLUIDO).
+            const statusAtualUpper = String(c.status || '').toUpperCase();
+            if (isCliente && (statusAtualUpper === 'ABERTO' || statusAtualUpper === 'AGUARDANDO PAGAMENTO' || statusAtualUpper === 'AGUARDANDO_PAGAMENTO')) {
               htmlContent += '<div style="margin-top: 10px; border-top: 1px solid #334155; padding-top: 8px; display: flex; gap: 5px;">';
               htmlContent += '<button type="button" class="btn-toggle-edicao" data-id="' + c.id + '" style="background-color: #f59e0b; width: auto; padding: 6px 14px; font-size: 12px; color: #0f172a; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">Editar</button>';
               htmlContent += '</div>';
