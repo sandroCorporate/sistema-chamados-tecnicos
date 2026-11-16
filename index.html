@@ -654,21 +654,23 @@
               htmlContent += '<small style="color: #38bdf8; display: block; font-weight: bold; margin-top: 4px; font-size: 12px;">Valor: R$ ' + valorNum.toFixed(2) + '</small>';
             }
 
-            // Bloco do Pix inteligente, persistente e corrigido para evitar conflito de toque
+            // Bloco do Pix restrito exclusivamente ao perfil do Cliente
             const isAguardando = (c.status === 'AGUARDANDO PAGAMENTO' || c.status === 'AGUARDANDO_PAGAMENTO');
             const temPixSalvo = c.pagamento_id && c.qr_code;
 
-            htmlContent += '<div id="pix-container-' + c.id + '" class="pix-box ' + (isAguardando ? '' : 'hidden') + '">';
-            htmlContent += '<p style="font-size: 12px; font-weight: bold; color: #f97316; margin-bottom: 6px;">Escaneie o QR Code ou copie o Pix:</p>';
-            
-            if (temPixSalvo) {
-              htmlContent += '<img id="pix-img-' + c.id + '" src="data:image/png;base64,' + (c.qr_code_base64 || '') + '" alt="QR Code Pix" style="max-width: 150px; display: block; margin: 0 auto 8px auto; border-radius: 6px;" />';
-              htmlContent += '<textarea id="pix-copia-' + c.id + '" rows="2" style="font-size: 11px; resize: none; background: #020617;" readonly>' + (c.qr_code || '') + '</textarea>';
-              htmlContent += '<button type="button" onclick="window.copiarPix(\'' + c.id + '\')" style="margin-top: 8px; background-color: #f97316; font-size: 12px; padding: 8px; width: 100%; border-radius: 6px; font-weight: bold; color: #fff; cursor: pointer;">Copiar Código Pix</button>';
-            } else {
-              htmlContent += '<button type="button" onclick="window.gerarPix(\'' + c.id + '\', ' + (valorNum || 0.03) + ')" style="background-color: #f97316; font-size: 12px; padding: 10px; width: 100%; border-radius: 6px; font-weight: bold; color: #fff; cursor: pointer;"><i class="fa-solid fa-qrcode mr-1"></i> Gerar Pagamento Pix (R$ ' + Number(valorNum || 0.03).toFixed(2) + ')</button>';
+            if (isCliente && isAguardando) {
+              htmlContent += '<div id="pix-container-' + c.id + '" class="pix-box">';
+              htmlContent += '<p style="font-size: 12px; font-weight: bold; color: #f97316; margin-bottom: 6px;">Escaneie o QR Code ou copie o Pix:</p>';
+              
+              if (temPixSalvo) {
+                htmlContent += '<img id="pix-img-' + c.id + '" src="data:image/png;base64,' + (c.qr_code_base64 || '') + '" alt="QR Code Pix" style="max-width: 150px; display: block; margin: 0 auto 8px auto; border-radius: 6px;" />';
+                htmlContent += '<textarea id="pix-copia-' + c.id + '" rows="2" style="font-size: 11px; resize: none; background: #020617;" readonly>' + (c.qr_code || '') + '</textarea>';
+                htmlContent += '<button type="button" onclick="window.copiarPix(\'' + c.id + '\')" style="margin-top: 8px; background-color: #f97316; font-size: 12px; padding: 8px; width: 100%; border-radius: 6px; font-weight: bold; color: #fff; cursor: pointer;">Copiar Código Pix</button>';
+              } else {
+                htmlContent += '<button type="button" onclick="window.gerarPix(\'' + c.id + '\', ' + (valorNum || 0.03) + ')" style="background-color: #f97316; font-size: 12px; padding: 10px; width: 100%; border-radius: 6px; font-weight: bold; color: #fff; cursor: pointer;"><i class="fa-solid fa-qrcode mr-1"></i> Gerar Pagamento Pix (R$ ' + Number(valorNum || 0.03).toFixed(2) + ')</button>';
+              }
+              htmlContent += '</div>';
             }
-            htmlContent += '</div>';
 
             const statusAtualUpper = String(c.status || '').toUpperCase();
             if (isCliente && (statusAtualUpper === 'ABERTO' || statusAtualUpper === 'AGUARDANDO PAGAMENTO' || statusAtualUpper === 'AGUARDANDO_PAGAMENTO')) {
