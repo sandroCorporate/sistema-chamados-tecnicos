@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<script src="https://sdk.mercadopago.com/js/v2"></script>
     <title>LL TECH INFO - Sistema de Chamados Técnicos & Consultoria</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -397,7 +398,64 @@
             </div>
           </div>
         </div>
+		<div id="modal-pagamento-cartao" class="hidden mt-4 p-4 rounded-xl border border-slate-700 bg-slate-900 text-slate-100">
+  <div class="flex items-center justify-between mb-3">
+    <h3 class="text-base font-bold text-amber-400">Pagamento Parcelado no Cartão</h3>
+    <button type="button" onclick="fecharPagamentoCartao()" class="text-xs px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer">
+      <i class="fa-solid fa-xmark mr-1"></i> Fechar
+    </button>
+  </div>
 
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+    <div>
+      <label for="mp-card-number" class="block text-xs text-slate-300 mb-1">Número do cartão</label>
+      <div id="mp-card-number" class="p-2.5 rounded bg-slate-800 border border-slate-600 min-h-[40px]"></div>
+    </div>
+
+    <div>
+      <label for="mp-card-holder" class="block text-xs text-slate-300 mb-1">Nome impresso no cartão</label>
+      <input type="text" id="mp-card-holder" placeholder="Como está no cartão"
+             class="w-full p-2.5 rounded bg-slate-800 border border-slate-600 text-sm text-white" />
+    </div>
+
+    <div>
+      <label for="mp-expiration-date" class="block text-xs text-slate-300 mb-1">Validade (MM/AA)</label>
+      <div id="mp-expiration-date" class="p-2.5 rounded bg-slate-800 border border-slate-600 min-h-[40px]"></div>
+    </div>
+
+    <div>
+      <label for="mp-security-code" class="block text-xs text-slate-300 mb-1">Código de segurança (CVV)</label>
+      <div id="mp-security-code" class="p-2.5 rounded bg-slate-800 border border-slate-600 min-h-[40px]"></div>
+    </div>
+
+    <div>
+      <label for="mp-doc-number" class="block text-xs text-slate-300 mb-1">CPF/CNPJ do titular</label>
+      <input type="text" id="mp-doc-number" placeholder="Apenas números"
+             class="w-full p-2.5 rounded bg-slate-800 border border-slate-600 text-sm text-white" />
+    </div>
+
+    <div>
+      <label for="mp-email" class="block text-xs text-slate-300 mb-1">E-mail do pagador</label>
+      <input type="email" id="mp-email" placeholder="cliente@email.com"
+             class="w-full p-2.5 rounded bg-slate-800 border border-slate-600 text-sm text-white" />
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label for="mp-installments" class="block text-xs text-slate-300 mb-1">Parcelamento</label>
+    <select id="mp-installments" class="w-full p-2.5 rounded bg-slate-800 border border-slate-600 text-sm text-white">
+      <option value="">Informe o número do cartão para carregar parcelas</option>
+    </select>
+    <p id="mp-resumo-parcela" class="text-xs text-amber-300 mt-1"></p>
+  </div>
+
+  <button type="button" id="btn-confirmar-cartao" onclick="processarPagamentoCartaoMP()"
+          class="px-4 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm">
+    Pagar com Cartão
+  </button>
+
+  <p id="mp-feedback-cartao" class="text-xs mt-3 text-slate-300"></p>
+</div>
       </div>
 
     </div>
@@ -670,6 +728,9 @@
                 htmlContent += '<button type="button" onclick="window.gerarPix(\'' + c.id + '\', ' + (valorNum || 0.03) + ')" style="background-color: #f97316; font-size: 12px; padding: 10px; width: 100%; border-radius: 6px; font-weight: bold; color: #fff; cursor: pointer;"><i class="fa-solid fa-qrcode mr-1"></i> Gerar Pagamento Pix (R$ ' + Number(valorNum || 0.03).toFixed(2) + ')</button>';
               }
               htmlContent += '</div>';
+
+              const emailSafe = String(usuario?.email || '').replace(/'/g, "\\'");
+              htmlContent += '<button type="button" onclick="window.abrirPagamentoCartao({ chamadoId: \'' + c.id + '\', valorTotal: ' + (valorNum || 0.03) + ', emailPadrao: \'' + emailSafe + '\' })" style="margin-top: 8px; background-color: #f59e0b; font-size: 12px; padding: 10px; width: 100%; border-radius: 6px; font-weight: bold; color: #0f172a; cursor: pointer;"><i class="fa-solid fa-credit-card mr-1"></i> Pagar Parcelado no Cartão</button>';
             }
 
             const statusAtualUpper = String(c.status || '').toUpperCase();
@@ -907,6 +968,185 @@
               alert('Ocorreu um erro ao ligar ao servidor.');
           }
       }
+
+      // ==========================================
+      // MERCADO PAGO: CARTÃO PARCELADO (SDK v2)
+      // ==========================================
+      const MP_PUBLIC_KEY = 'APP_USR-0bb5b77d-f798-40e9-8e13-f4a2c5bc1c71';
+      const mpSdk = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
+
+      let mpCardNumberElement = null;
+      let mpExpirationDateElement = null;
+      let mpSecurityCodeElement = null;
+
+      let estadoPagamentoCartao = {
+        chamadoId: null,
+        orcamentoId: null,
+        valorTotal: 0,
+        paymentMethodId: null,
+        issuerId: null
+      };
+
+      function inicializarCamposCartaoMP() {
+        if (mpCardNumberElement) return;
+
+        mpCardNumberElement = mpSdk.fields.create('cardNumber', {
+          placeholder: '0000 0000 0000 0000',
+          style: { color: '#ffffff' }
+        }).mount('mp-card-number');
+
+        mpExpirationDateElement = mpSdk.fields.create('expirationDate', {
+          placeholder: 'MM/AA',
+          style: { color: '#ffffff' }
+        }).mount('mp-expiration-date');
+
+        mpSecurityCodeElement = mpSdk.fields.create('securityCode', {
+          placeholder: 'CVV',
+          style: { color: '#ffffff' }
+        }).mount('mp-security-code');
+
+        mpCardNumberElement.on('binChange', async (data) => {
+          estadoPagamentoCartao.paymentMethodId = null;
+          estadoPagamentoCartao.issuerId = null;
+
+          if (!data.bin || estadoPagamentoCartao.valorTotal <= 0) return;
+
+          try {
+            const installmentsResp = await mpSdk.getInstallments({
+              amount: String(estadoPagamentoCartao.valorTotal.toFixed(2)),
+              bin: data.bin
+            });
+
+            const selectParcelas = document.getElementById('mp-installments');
+            selectParcelas.innerHTML = '';
+
+            const metodo = installmentsResp[0];
+            if (!metodo || !metodo.payer_costs || metodo.payer_costs.length === 0) {
+              selectParcelas.innerHTML = '<option value="1">1x (à vista)</option>';
+              atualizarTextoParcelaSelecionada();
+              return;
+            }
+
+            estadoPagamentoCartao.paymentMethodId = metodo.payment_method_id;
+            estadoPagamentoCartao.issuerId = metodo.issuer?.id || '';
+
+            metodo.payer_costs.forEach((op) => {
+              const opt = document.createElement('option');
+              opt.value = op.installments;
+              opt.textContent = op.recommended_message || `${op.installments}x de R$ ${Number(op.installment_amount).toFixed(2)}`;
+              selectParcelas.appendChild(opt);
+            });
+
+            atualizarTextoParcelaSelecionada();
+            selectParcelas.onchange = atualizarTextoParcelaSelecionada;
+          } catch (err) {
+            console.error('[Erro ao buscar parcelas MP]:', err);
+          }
+        });
+      }
+
+      function atualizarTextoParcelaSelecionada() {
+        const select = document.getElementById('mp-installments');
+        const resumo = document.getElementById('mp-resumo-parcela');
+        const qtd = Number(select.value) || 1;
+        const parcelaEstimada = estadoPagamentoCartao.valorTotal > 0
+          ? (estadoPagamentoCartao.valorTotal / qtd).toFixed(2)
+          : '0.00';
+
+        resumo.textContent = `Valor total: R$ ${estadoPagamentoCartao.valorTotal.toFixed(2)} — Selecionado: ${qtd}x (aprox. R$ ${parcelaEstimada}/parcela)`;
+      }
+
+      window.abrirPagamentoCartao = function({ chamadoId, orcamentoId = null, valorTotal, emailPadrao = '' }) {
+        estadoPagamentoCartao = {
+          chamadoId,
+          orcamentoId,
+          valorTotal: Number(valorTotal) || 0,
+          paymentMethodId: null,
+          issuerId: null
+        };
+
+        const modal = document.getElementById('modal-pagamento-cartao');
+        modal.classList.remove('hidden');
+
+        if (emailPadrao) {
+          document.getElementById('mp-email').value = emailPadrao;
+        }
+
+        document.getElementById('mp-feedback-cartao').textContent = '';
+        inicializarCamposCartaoMP();
+        atualizarTextoParcelaSelecionada();
+        modal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      };
+
+      window.fecharPagamentoCartao = function() {
+        document.getElementById('modal-pagamento-cartao').classList.add('hidden');
+      };
+
+      window.processarPagamentoCartaoMP = async function() {
+        const feedback = document.getElementById('mp-feedback-cartao');
+        const btn = document.getElementById('btn-confirmar-cartao');
+
+        const cardholderName = document.getElementById('mp-card-holder').value.trim();
+        const docNumber = document.getElementById('mp-doc-number').value.replace(/\D/g, '');
+        const payerEmail = document.getElementById('mp-email').value.trim();
+        const installments = Number(document.getElementById('mp-installments').value) || 1;
+
+        if (!cardholderName || !payerEmail) {
+          feedback.textContent = 'Preencha o nome do titular e o e-mail do pagador.';
+          return;
+        }
+
+        btn.disabled = true;
+        feedback.textContent = 'Validando cartão e processando pagamento...';
+
+        try {
+          const tokenResp = await mpSdk.fields.createCardToken({
+            cardholderName,
+            identificationType: docNumber.length === 14 ? 'CNPJ' : 'CPF',
+            identificationNumber: docNumber || undefined
+          });
+
+          if (!tokenResp || !tokenResp.id) {
+            throw new Error('Não foi possível gerar o token do cartão. Confira os dados digitados.');
+          }
+
+          const resp = await fetch('/api/pagamentos/cartao-parcelado', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              chamado_id: estadoPagamentoCartao.chamadoId,
+              orcamento_id: estadoPagamentoCartao.orcamentoId,
+              valor: estadoPagamentoCartao.valorTotal,
+              token: tokenResp.id,
+              installments,
+              payment_method_id: estadoPagamentoCartao.paymentMethodId || tokenResp.payment_method_id,
+              issuer_id: estadoPagamentoCartao.issuerId || tokenResp.issuer_id,
+              payer_email: payerEmail,
+              identification_type: docNumber.length === 14 ? 'CNPJ' : 'CPF',
+              identification_number: docNumber
+            })
+          });
+
+          const data = await resp.json();
+
+          if (!resp.ok) {
+            feedback.textContent = `Erro: ${data.error || 'Falha ao processar o pagamento.'}`;
+            return;
+          }
+
+          feedback.textContent = `${data.mensagem} (${data.parcelas}x de R$ ${Number(data.valorParcela).toFixed(2)} — Status: ${data.statusEnum})`;
+          await carregarChamados();
+          setTimeout(() => fecharPagamentoCartao(), 2500);
+        } catch (err) {
+          console.error('[Erro pagamento cartão]:', err);
+          feedback.textContent = `Erro: ${err.message || 'Falha na comunicação.'}`;
+        } finally {
+          btn.disabled = false;
+        }
+      };
     </script>
   </body>
 </html>
