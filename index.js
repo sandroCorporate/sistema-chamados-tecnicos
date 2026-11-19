@@ -437,6 +437,213 @@ O pagamento do chamado *#${String(ch.id).substring(0, 8)}* foi confirmado! Statu
   }
 });
 
+// ==========================================
+// INTEGRACAO MERCADO PAGO: Cartão Parcelado
+// ==========================================
+function mapearStatusMercadoPagoParaEnum(mpStatus) {
+  switch (mpStatus) {
+    case 'approved':
+      return 'CONCLUIDO';
+    case 'rejected':
+    case 'cancelled':
+      return 'FALHOU';
+    case 'refunded':
+    case 'charged_back':
+      return 'ESTORNADO';
+    case 'in_process':
+    case 'pending':
+    case 'authorized':
+    default:
+      return 'PENDENTE';
+  }
+}
+
+app.post('/api/pagamentos/cartao-parcelado', autenticarToken, async (req, res) => {
+  try {
+    const empresaId = req.usuario.empresa_id || 'a0000000-0000-0000-0000-000000000001';
+    const {
+      chamado_id,
+      orcamento_id,
+      valor,
+      token,
+      installments,
+      payment_method_id,
+      issuer_id,
+      payer_email,
+      identification_type,
+      identification_number
+    } = req.body;
+
+    if (!token || !payment_method_id) {
+      return res.status(400).json({ error: 'Token do cartão e meio de pagamento são obrigatórios.' });
+    }
+
+    const qtdParcelas = Number(installments) || 1;
+    if (qtdParcelas < 1 || qtdParcelas > 24) {
+      return res.status(400).json({ error: 'Quantidade de parcelas inválida.' });
+    }
+
+    let valorTotal = Number(valor) || 0;
+    let orcamentoIdFinal = orcamento_id || null;
+    let chamadoRef = null;
+
+    if (chamado_id) {
+      const chamadoRes = await db.query(
+        'SELECT * FROM chamados WHERE id = $1 AND empresa_id = $2',
+        [chamado_id, empresaId]
+      );
+      if (chamadoRes.rows.length === 0) {
+        return res.status(404).json({ error: 'Chamado não encontrado para esta empresa.' });
+      }
+      chamadoRef = chamadoRes.rows[0];
+      if (!valorTotal && chamadoRef.valor) {
+        valorTotal = Number(chamadoRef.valor);
+      }
+    }
+
+    if (orcamentoIdFinal) {
+      const orcRes = await db.query(
+        'SELECT id, valor_total, empresa_id FROM public.orcamentos WHERE id = $1 AND empresa_id = $2',
+        [orcamentoIdFinal, empresaId]
+      );
+      if (orcRes.rows.length === 0) {
+        return res.status(404).json({ error: 'Orçamento não encontrado para esta empresa.' });
+      }
+      if (!valorTotal && orcRes.rows[0].valor_total) {
+        valorTotal = Number(orcRes.rows[0].valor_total);
+      }
+    }
+
+    if (!valorTotal || valorTotal <= 0) {
+      return res.status(400).json({ error: 'Valor total inválido para pagamento parcelado.' });
+    }
+
+    const userRes = await db.query(
+      'SELECT nome, email, telefone, documento FROM usuarios WHERE id = $1',
+      [req.usuario.id]
+    );
+    const cliente = userRes.rows[0] || {};
+
+    let docLimpo = identification_number
+      ? String(identification_number).replace(/\D/g, '')
+      : (cliente.documento ? String(cliente.documento).replace(/\D/g, '') : '');
+    const tipoDoc = identification_type || (docLimpo.length === 14 ? 'CNPJ' : 'CPF');
+
+    const payment = new Payment(mpClient);
+    const mpResponse = await payment.create({
+      body: {
+        transaction_amount: valorTotal,
+        token,
+        description: chamadoRef
+          ? `LL TECH INFO - Chamado #${String(chamadoRef.id).substring(0, 8)} (${qtdParcelas}x)`
+          : `LL TECH INFO - Pagamento (${qtdParcelas}x)`,
+        installments: qtdParcelas,
+        payment_method_id,
+        issuer_id: issuer_id ? Number(issuer_id) : undefined,
+        payer: {
+          email: payer_email || cliente.email || 'suporte@lltech.info',
+          identification: docLimpo ? { type: tipoDoc, number: docLimpo } : undefined
+        },
+        metadata: {
+          empresa_id: empresaId,
+          chamado_id: chamadoRef ? chamadoRef.id : null,
+          orcamento_id: orcamentoIdFinal,
+          parcelas: qtdParcelas
+        }
+      }
+    });
+
+    const mpStatus = mpResponse.status;
+    const statusEnum = mapearStatusMercadoPagoParaEnum(mpStatus);
+    const statusDetalhe = mpResponse.status_detail || mpStatus;
+    const valorParcela = Number((valorTotal / qtdParcelas).toFixed(2));
+    const transacaoId = String(mpResponse.id);
+    const pagoEm = statusEnum === 'CONCLUIDO' ? new Date() : null;
+
+    let pagamentoSalvo = null;
+    if (orcamentoIdFinal) {
+      const insertPag = await db.query(
+        `INSERT INTO public.pagamentos (
+          orcamento_id,
+          metodo,
+          status,
+          transacao_id,
+          pago_em,
+          empresa_id,
+          parcelas,
+          valor_parcela,
+          valor_total,
+          status_detalhe
+        ) VALUES ($1, $2, $3::status_pagamento, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING *`,
+        [
+          orcamentoIdFinal,
+          'CREDIT_CARD',
+          statusEnum,
+          transacaoId,
+          pagoEm,
+          empresaId,
+          qtdParcelas,
+          valorParcela,
+          valorTotal,
+          statusDetalhe
+        ]
+      );
+      pagamentoSalvo = insertPag.rows[0];
+    }
+
+    if (statusEnum === 'CONCLUIDO') {
+      if (orcamentoIdFinal) {
+        await db.query(
+          `UPDATE public.orcamentos
+           SET status = 'APROVADO'::status_orcamento
+           WHERE id = $1 AND empresa_id = $2`,
+          [orcamentoIdFinal, empresaId]
+        );
+      }
+
+      if (chamadoRef) {
+        await db.query(
+          `UPDATE chamados
+           SET status = 'EM ATENDIMENTO', valor = $1, pagamento_id = $2
+           WHERE id = $3`,
+          [valorTotal, transacaoId, chamadoRef.id]
+        );
+
+        if (cliente && cliente.telefone) {
+          enviarNotificacaoWhatsApp(
+            cliente.telefone,
+            `🖥️ *LL TECH INFO - PAGAMENTO APROVADO*\nO pagamento parcelado (${qtdParcelas}x de R$ ${valorParcela.toFixed(2)}) do chamado *#${String(chamadoRef.id).substring(0, 8)}* foi confirmado! Status: EM ATENDIMENTO.`
+          );
+        }
+      }
+    } else if (chamadoRef) {
+      await db.query(
+        `UPDATE chamados
+         SET status = 'AGUARDANDO PAGAMENTO', valor = $1, pagamento_id = $2
+         WHERE id = $3`,
+        [valorTotal, transacaoId, chamadoRef.id]
+      );
+    }
+
+    return res.json({
+      mensagem: statusEnum === 'CONCLUIDO'
+        ? 'Pagamento no cartão aprovado!'
+        : 'Pagamento processado com status pendente/em análise.',
+      pagamentoId: transacaoId,
+      statusGateway: mpStatus,
+      statusEnum,
+      statusDetalhe,
+      parcelas: qtdParcelas,
+      valorParcela,
+      pagamento: pagamentoSalvo
+    });
+  } catch (error) {
+    console.error('[Erro POST /api/pagamentos/cartao-parcelado]:', error);
+    return res.status(500).json({ error: 'Erro ao processar pagamento no cartão: ' + error.message });
+  }
+});
+
 app.get('/api/chamados/:id/verificar-pagamento', autenticarToken, async (req, res) => {
   try {
     const { id } = req.params;
