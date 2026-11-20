@@ -1112,6 +1112,17 @@
         feedback.textContent = 'Validando cartão e processando pagamento...';
 
         try {
+          let binDetectado = '';
+          try {
+            if (mpCardNumberElement && typeof mpCardNumberElement.get === 'function') {
+              const cardNumVal = await mpCardNumberElement.get('value');
+              const digits = String(cardNumVal || '').replace(/\D/g, '');
+              if (digits.length >= 6) {
+                binDetectado = digits.slice(0, 6);
+              }
+            }
+          } catch (_) {}
+
           const tokenResp = await mpSdk.fields.createCardToken({
             cardholderName,
             identificationType: docNumber.length === 14 ? 'CNPJ' : 'CPF',
@@ -1134,15 +1145,17 @@
             (tokenResp.issuer && tokenResp.issuer.id) ||
             '';
 
-          if (!paymentMethodIdFinal && tokenResp.first_six_digits) {
-            await consultarParcelasPorBin(tokenResp.first_six_digits);
+          const binEfetivo = tokenResp.first_six_digits || binDetectado || '';
+
+          if (!paymentMethodIdFinal && binEfetivo) {
+            await consultarParcelasPorBin(binEfetivo);
             paymentMethodIdFinal = estadoPagamentoCartao.paymentMethodId || '';
             issuerIdFinal = estadoPagamentoCartao.issuerId || '';
           }
 
-          if (!paymentMethodIdFinal && tokenResp.first_six_digits && typeof mpSdk.getPaymentMethods === 'function') {
+          if (!paymentMethodIdFinal && binEfetivo && typeof mpSdk.getPaymentMethods === 'function') {
             try {
-              const pmResp = await mpSdk.getPaymentMethods({ bin: tokenResp.first_six_digits });
+              const pmResp = await mpSdk.getPaymentMethods({ bin: binEfetivo });
               const listaPm = Array.isArray(pmResp) ? pmResp : (pmResp?.results || []);
               if (listaPm.length > 0 && listaPm[0].id) {
                 paymentMethodIdFinal = listaPm[0].id;
