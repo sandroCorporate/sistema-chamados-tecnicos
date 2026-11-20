@@ -780,17 +780,24 @@ async function processarAtualizacaoChamado(req, res) {
     const chamadoAtualizado = result.rows[0];
 
     if (status) {
-      const statusUpper = String(status).toUpperCase();
+      const statusUpper = String(status).toUpperCase().trim();
       const userId = chamadoAtualizado.usuario_id || chamadoAtualizado.usuarioid;
       const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = $1', [userId]);
       const cliente = userRes.rows[0];
 
       if (cliente && cliente.telefone) {
+        let complementoStatus = '';
+        if (statusUpper === 'AGUARDANDO PAGAMENTO' || statusUpper === 'AGUARDANDO_PAGAMENTO') {
+          complementoStatus = '\n\n💳 Acesse o painel e escolha a forma de pagamento.';
+        } else if (statusUpper === 'CONCLUIDO' || statusUpper === 'CONCLUÍDO') {
+          complementoStatus = '\n\n📦 O seu equipamento já pode ser retirado.';
+        }
+
         const msgAtualizacao = `🖥️ *LL TECH INFO - ATUALIZAÇÃO DE CHAMADO*
 ----------------------------------------
 Olá, *${cliente.nome}*!
 O seu chamado *#${String(chamadoAtualizado.id).substring(0, 8)}* foi atualizado.
-📌 *Novo Status:* ${statusUpper}`;
+📌 *Novo Status:* ${statusUpper}${complementoStatus}`;
         
         enviarNotificacaoWhatsApp(cliente.telefone, msgAtualizacao);
       }
