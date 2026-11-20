@@ -409,42 +409,42 @@
   <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
     <div>
       <label for="mp-card-number" class="block text-xs text-slate-300 mb-1">Número do cartão</label>
-      <div id="mp-card-number" class="p-2.5 rounded bg-slate-800 border border-slate-600 min-h-[40px]"></div>
+      <div id="mp-card-number" class="p-2.5 rounded bg-slate-800 border border-slate-600 h-[42px] flex items-center"></div>
     </div>
 
     <div>
       <label for="mp-card-holder" class="block text-xs text-slate-300 mb-1">Nome impresso no cartão</label>
       <input type="text" id="mp-card-holder" placeholder="Como está no cartão"
-             class="w-full p-2.5 rounded bg-slate-800 border border-slate-600 text-sm text-white" />
+             class="w-full h-[42px] px-3 rounded bg-slate-800 border border-slate-600 text-sm text-white" />
     </div>
 
     <div>
       <label for="mp-expiration-date" class="block text-xs text-slate-300 mb-1">Validade (MM/AA)</label>
-      <div id="mp-expiration-date" class="p-2.5 rounded bg-slate-800 border border-slate-600 min-h-[40px]"></div>
+      <div id="mp-expiration-date" class="p-2.5 rounded bg-slate-800 border border-slate-600 h-[42px] flex items-center"></div>
     </div>
 
     <div>
       <label for="mp-security-code" class="block text-xs text-slate-300 mb-1">Código de segurança (CVV)</label>
-      <div id="mp-security-code" class="p-2.5 rounded bg-slate-800 border border-slate-600 min-h-[40px]"></div>
+      <div id="mp-security-code" class="p-2.5 rounded bg-slate-800 border border-slate-600 h-[42px] flex items-center"></div>
     </div>
 
     <div>
       <label for="mp-doc-number" class="block text-xs text-slate-300 mb-1">CPF/CNPJ do titular</label>
       <input type="text" id="mp-doc-number" placeholder="Apenas números"
-             class="w-full p-2.5 rounded bg-slate-800 border border-slate-600 text-sm text-white" />
+             class="w-full h-[42px] px-3 rounded bg-slate-800 border border-slate-600 text-sm text-white" />
     </div>
 
     <div>
       <label for="mp-email" class="block text-xs text-slate-300 mb-1">E-mail do pagador</label>
       <input type="email" id="mp-email" placeholder="cliente@email.com"
-             class="w-full p-2.5 rounded bg-slate-800 border border-slate-600 text-sm text-white" />
+             class="w-full h-[42px] px-3 rounded bg-slate-800 border border-slate-600 text-sm text-white" />
     </div>
   </div>
 
   <div class="mb-3">
     <label for="mp-installments" class="block text-xs text-slate-300 mb-1">Parcelamento</label>
     <select id="mp-installments" class="w-full p-2.5 rounded bg-slate-800 border border-slate-600 text-sm text-white">
-      <option value="">Informe o número do cartão para carregar parcelas</option>
+      <option value="1">1x (à vista)</option>
     </select>
     <p id="mp-resumo-parcela" class="text-xs text-amber-300 mt-1"></p>
   </div>
@@ -987,61 +987,72 @@
         issuerId: null
       };
 
+      const fieldStyleMP = {
+        color: '#ffffff',
+        fontSize: '14px',
+        fontFamily: 'Inter, sans-serif'
+      };
+
+      async function consultarParcelasPorBin(bin) {
+        estadoPagamentoCartao.paymentMethodId = null;
+        estadoPagamentoCartao.issuerId = null;
+
+        const selectParcelas = document.getElementById('mp-installments');
+        if (!bin || estadoPagamentoCartao.valorTotal <= 0) return;
+
+        try {
+          const installmentsResp = await mpSdk.getInstallments({
+            amount: String(estadoPagamentoCartao.valorTotal.toFixed(2)),
+            bin
+          });
+
+          const metodo = Array.isArray(installmentsResp) ? installmentsResp[0] : installmentsResp;
+          if (!metodo || !metodo.payer_costs || metodo.payer_costs.length === 0) {
+            selectParcelas.innerHTML = '<option value="1">1x (à vista)</option>';
+            atualizarTextoParcelaSelecionada();
+            return;
+          }
+
+          estadoPagamentoCartao.paymentMethodId = metodo.payment_method_id || null;
+          estadoPagamentoCartao.issuerId = metodo.issuer?.id || '';
+
+          selectParcelas.innerHTML = '';
+          metodo.payer_costs.forEach((op) => {
+            const opt = document.createElement('option');
+            opt.value = op.installments;
+            opt.textContent = op.recommended_message || `${op.installments}x de R$ ${Number(op.installment_amount).toFixed(2)}`;
+            selectParcelas.appendChild(opt);
+          });
+
+          atualizarTextoParcelaSelecionada();
+          selectParcelas.onchange = atualizarTextoParcelaSelecionada;
+        } catch (err) {
+          console.error('[Erro ao buscar parcelas MP]:', err);
+          selectParcelas.innerHTML = '<option value="1">1x (à vista)</option>';
+          atualizarTextoParcelaSelecionada();
+        }
+      }
+
       function inicializarCamposCartaoMP() {
         if (mpCardNumberElement) return;
 
         mpCardNumberElement = mpSdk.fields.create('cardNumber', {
           placeholder: '0000 0000 0000 0000',
-          style: { color: '#ffffff' }
+          style: fieldStyleMP
         }).mount('mp-card-number');
 
         mpExpirationDateElement = mpSdk.fields.create('expirationDate', {
           placeholder: 'MM/AA',
-          style: { color: '#ffffff' }
+          style: fieldStyleMP
         }).mount('mp-expiration-date');
 
         mpSecurityCodeElement = mpSdk.fields.create('securityCode', {
           placeholder: 'CVV',
-          style: { color: '#ffffff' }
+          style: fieldStyleMP
         }).mount('mp-security-code');
 
         mpCardNumberElement.on('binChange', async (data) => {
-          estadoPagamentoCartao.paymentMethodId = null;
-          estadoPagamentoCartao.issuerId = null;
-
-          if (!data.bin || estadoPagamentoCartao.valorTotal <= 0) return;
-
-          try {
-            const installmentsResp = await mpSdk.getInstallments({
-              amount: String(estadoPagamentoCartao.valorTotal.toFixed(2)),
-              bin: data.bin
-            });
-
-            const selectParcelas = document.getElementById('mp-installments');
-            selectParcelas.innerHTML = '';
-
-            const metodo = installmentsResp[0];
-            if (!metodo || !metodo.payer_costs || metodo.payer_costs.length === 0) {
-              selectParcelas.innerHTML = '<option value="1">1x (à vista)</option>';
-              atualizarTextoParcelaSelecionada();
-              return;
-            }
-
-            estadoPagamentoCartao.paymentMethodId = metodo.payment_method_id;
-            estadoPagamentoCartao.issuerId = metodo.issuer?.id || '';
-
-            metodo.payer_costs.forEach((op) => {
-              const opt = document.createElement('option');
-              opt.value = op.installments;
-              opt.textContent = op.recommended_message || `${op.installments}x de R$ ${Number(op.installment_amount).toFixed(2)}`;
-              selectParcelas.appendChild(opt);
-            });
-
-            atualizarTextoParcelaSelecionada();
-            selectParcelas.onchange = atualizarTextoParcelaSelecionada;
-          } catch (err) {
-            console.error('[Erro ao buscar parcelas MP]:', err);
-          }
+          await consultarParcelasPorBin(data?.bin || '');
         });
       }
 
@@ -1072,6 +1083,7 @@
           document.getElementById('mp-email').value = emailPadrao;
         }
 
+        document.getElementById('mp-installments').innerHTML = '<option value="1">1x (à vista)</option>';
         document.getElementById('mp-feedback-cartao').textContent = '';
         inicializarCamposCartaoMP();
         atualizarTextoParcelaSelecionada();
@@ -1110,6 +1122,45 @@
             throw new Error('Não foi possível gerar o token do cartão. Confira os dados digitados.');
           }
 
+          let paymentMethodIdFinal =
+            estadoPagamentoCartao.paymentMethodId ||
+            tokenResp.payment_method_id ||
+            (tokenResp.payment_method && tokenResp.payment_method.id) ||
+            '';
+
+          let issuerIdFinal =
+            estadoPagamentoCartao.issuerId ||
+            tokenResp.issuer_id ||
+            (tokenResp.issuer && tokenResp.issuer.id) ||
+            '';
+
+          if (!paymentMethodIdFinal && tokenResp.first_six_digits) {
+            await consultarParcelasPorBin(tokenResp.first_six_digits);
+            paymentMethodIdFinal = estadoPagamentoCartao.paymentMethodId || '';
+            issuerIdFinal = estadoPagamentoCartao.issuerId || '';
+          }
+
+          if (!paymentMethodIdFinal && tokenResp.first_six_digits && typeof mpSdk.getPaymentMethods === 'function') {
+            try {
+              const pmResp = await mpSdk.getPaymentMethods({ bin: tokenResp.first_six_digits });
+              const listaPm = Array.isArray(pmResp) ? pmResp : (pmResp?.results || []);
+              if (listaPm.length > 0 && listaPm[0].id) {
+                paymentMethodIdFinal = listaPm[0].id;
+                estadoPagamentoCartao.paymentMethodId = paymentMethodIdFinal;
+                if (!issuerIdFinal && Array.isArray(listaPm[0].issuer) === false && listaPm[0].issuer?.id) {
+                  issuerIdFinal = listaPm[0].issuer.id;
+                  estadoPagamentoCartao.issuerId = issuerIdFinal;
+                }
+              }
+            } catch (pmErr) {
+              console.error('[Erro ao buscar meio de pagamento por BIN]:', pmErr);
+            }
+          }
+
+          if (!paymentMethodIdFinal) {
+            throw new Error('Não foi possível identificar o meio de pagamento (bandeira) do cartão.');
+          }
+
           const resp = await fetch('/api/pagamentos/cartao-parcelado', {
             method: 'POST',
             headers: {
@@ -1122,8 +1173,8 @@
               valor: estadoPagamentoCartao.valorTotal,
               token: tokenResp.id,
               installments,
-              payment_method_id: estadoPagamentoCartao.paymentMethodId || tokenResp.payment_method_id,
-              issuer_id: estadoPagamentoCartao.issuerId || tokenResp.issuer_id,
+              payment_method_id: paymentMethodIdFinal,
+              issuer_id: issuerIdFinal,
               payer_email: payerEmail,
               identification_type: docNumber.length === 14 ? 'CNPJ' : 'CPF',
               identification_number: docNumber
