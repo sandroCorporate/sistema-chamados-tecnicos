@@ -377,7 +377,6 @@ app.post('/api/chamados/:id/pagar-pix', autenticarToken, async (req, res) => {
     const qrCodeBase64 = response?.point_of_interaction?.transaction_data?.qr_code_base64;
     const pagamentoId = response?.id;
 
-    // Garante colunas na tabela e salva os dados do Pix na base de dados
     try { await db.query('ALTER TABLE chamados ADD COLUMN IF NOT EXISTS qr_code TEXT;'); } catch (e) {}
     try { await db.query('ALTER TABLE chamados ADD COLUMN IF NOT EXISTS qr_code_base64 TEXT;'); } catch (e) {}
 
@@ -402,41 +401,6 @@ ${qrCode}`;
   }
 });
 
-// Webhook Mercado Pago
-app.post('/api/webhook/mercadopago', async (req, res) => {
-  try {
-    const { action, type, data } = req.body;
-    const paymentId = data?.id || req.query['data.id'] || req.query.id;
-
-    if (paymentId && (type === 'payment' || action?.includes('payment'))) {
-      const payment = new Payment(mpClient);
-      const paymentInfo = await payment.get({ id: paymentId });
-
-      if (paymentInfo && paymentInfo.status === 'approved') {
-        const updateRes = await db.query(
-          "UPDATE chamados SET status = 'EM ATENDIMENTO' WHERE pagamento_id = $1 RETURNING *",
-          [String(paymentId)]
-        );
-
-        if (updateRes.rows.length > 0) {
-          const ch = updateRes.rows[0];
-          const userId = ch.usuario_id || ch.usuarioid;
-          const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = $1', [userId]);
-          const cliente = userRes.rows[0];
-
-          if (cliente && cliente.telefone) {
-            enviarNotificacaoWhatsApp(cliente.telefone, `🖥️ *LL TECH INFO - PAGAMENTO APROVADO*
-O pagamento do chamado *#${String(ch.id).substring(0, 8)}* foi confirmado! Status: EM ATENDIMENTO.`);
-          }
-        }
-      }
-    }
-    return res.status(200).send('OK');
-  } catch (error) {
-    return res.status(200).send('OK');
-  }
-});
-
 // ==========================================
 // INTEGRACAO MERCADO PAGO: Cartão Parcelado
 // ==========================================
@@ -457,6 +421,72 @@ function mapearStatusMercadoPagoParaEnum(mpStatus) {
       return 'PENDENTE';
   }
 }
+
+// Webhook Mercado Pago
+app.post('/api/webhook/mercadopago', async (req, res) => {
+  try {
+    const { action, type, data } = req.body || {};
+    const paymentId = data?.id || req.query['data.id'] || req.query.id;
+
+    if (paymentId && (type === 'payment' || action?.includes('payment'))) {
+      const payment = new Payment(mpClient);
+      const paymentInfo = await payment.get({ id: paymentId });
+      const mpStatus = paymentInfo?.status;
+      const statusEnum = mapearStatusMercadoPagoParaEnum(mpStatus);
+      const statusDetalhe = paymentInfo?.status_detail || mpStatus || null;
+      const transacaoId = String(paymentId);
+
+      try {
+        const pagUpdated = await db.query(
+          `UPDATE public.pagamentos
+           SET status = $1::status_pagamento,
+               status_detalhe = COALESCE($2, status_detalhe),
+               pago_em = CASE WHEN $1 = 'CONCLUIDO' THEN COALESCE(pago_em, NOW()) ELSE pago_em END
+           WHERE transacao_id = $3
+           RETURNING orcamento_id, empresa_id`,
+          [statusEnum, statusDetalhe, transacaoId]
+        );
+
+        if (statusEnum === 'CONCLUIDO' && pagUpdated.rows.length > 0) {
+          const { orcamento_id: orcId, empresa_id: empId } = pagUpdated.rows[0];
+          if (orcId) {
+            await db.query(
+              `UPDATE public.orcamentos
+               SET status = 'APROVADO'::status_orcamento
+               WHERE id = $1 AND ($2::uuid IS NULL OR empresa_id = $2)`,
+              [orcId, empId || null]
+            );
+          }
+        }
+      } catch (dbPagErr) {
+        console.error('[Webhook Pagamentos/Orcamentos Sync]:', dbPagErr.message);
+      }
+
+      if (paymentInfo && mpStatus === 'approved') {
+        const updateRes = await db.query(
+          "UPDATE chamados SET status = 'EM ATENDIMENTO' WHERE pagamento_id = $1 AND status <> 'EM ATENDIMENTO' RETURNING *",
+          [transacaoId]
+        );
+
+        if (updateRes.rows.length > 0) {
+          const ch = updateRes.rows[0];
+          const userId = ch.usuario_id || ch.usuarioid;
+          const userRes = await db.query('SELECT nome, telefone FROM usuarios WHERE id = $1', [userId]);
+          const cliente = userRes.rows[0];
+
+          if (cliente && cliente.telefone) {
+            enviarNotificacaoWhatsApp(cliente.telefone, `🖥️ *LL TECH INFO - PAGAMENTO APROVADO*
+O pagamento do chamado *#${String(ch.id).substring(0, 8)}* foi confirmado! Status: EM ATENDIMENTO.`);
+          }
+        }
+      }
+    }
+    return res.status(200).send('OK');
+  } catch (error) {
+    console.error('[Erro Webhook Mercado Pago]:', error.message);
+    return res.status(200).send('OK');
+  }
+});
 
 app.post('/api/pagamentos/cartao-parcelado', autenticarToken, async (req, res) => {
   try {
@@ -639,8 +669,12 @@ app.post('/api/pagamentos/cartao-parcelado', autenticarToken, async (req, res) =
       pagamento: pagamentoSalvo
     });
   } catch (error) {
-    console.error('[Erro POST /api/pagamentos/cartao-parcelado]:', error);
-    return res.status(500).json({ error: 'Erro ao processar pagamento no cartão: ' + error.message });
+    const mpCause = error?.cause?.[0]?.description || error?.cause?.[0]?.code || '';
+    const detalheErro = mpCause ? `${error.message} (${mpCause})` : error.message;
+    console.error('[Erro POST /api/pagamentos/cartao-parcelado]:', detalheErro, error?.cause || '');
+    return res.status(error?.status && error.status >= 400 && error.status < 500 ? error.status : 500).json({
+      error: 'Erro ao processar pagamento no cartão: ' + detalheErro
+    });
   }
 });
 
