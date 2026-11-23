@@ -993,12 +993,58 @@
         fontFamily: 'Inter, sans-serif'
       };
 
+      function obterLimiteParcelas(valor) {
+        const num = Number(valor) || 0;
+        return num > 500 ? 3 : 2;
+      }
+
+      function renderizarOpcoesParcelamento(valorTotal, payerCostsMp = []) {
+        const selectParcelas = document.getElementById('mp-installments');
+        const total = Number(valorTotal) || 0;
+        const limite = obterLimiteParcelas(total);
+        const valorAnterior = Number(selectParcelas.value) || 1;
+
+        const mapaMp = new Map();
+        if (Array.isArray(payerCostsMp)) {
+          payerCostsMp.forEach((op) => {
+            const qtd = Number(op.installments);
+            if (qtd >= 1 && qtd <= limite) {
+              mapaMp.set(qtd, op);
+            }
+          });
+        }
+
+        selectParcelas.innerHTML = '';
+        for (let qtd = 1; qtd <= limite; qtd++) {
+          const opt = document.createElement('option');
+          opt.value = String(qtd);
+          const opMp = mapaMp.get(qtd);
+          if (opMp && opMp.recommended_message) {
+            opt.textContent = opMp.recommended_message;
+          } else if (qtd === 1) {
+            opt.textContent = `1x (à vista) - R$ ${total.toFixed(2)}`;
+          } else {
+            const parcelaCalc = opMp && opMp.installment_amount != null
+              ? Number(opMp.installment_amount)
+              : (total / qtd);
+            opt.textContent = `${qtd}x de R$ ${parcelaCalc.toFixed(2)}`;
+          }
+          selectParcelas.appendChild(opt);
+        }
+
+        selectParcelas.value = String(valorAnterior <= limite ? valorAnterior : 1);
+        atualizarTextoParcelaSelecionada();
+        selectParcelas.onchange = atualizarTextoParcelaSelecionada;
+      }
+
       async function consultarParcelasPorBin(bin) {
         estadoPagamentoCartao.paymentMethodId = null;
         estadoPagamentoCartao.issuerId = null;
 
-        const selectParcelas = document.getElementById('mp-installments');
-        if (!bin || estadoPagamentoCartao.valorTotal <= 0) return;
+        if (!bin || estadoPagamentoCartao.valorTotal <= 0) {
+          renderizarOpcoesParcelamento(estadoPagamentoCartao.valorTotal);
+          return;
+        }
 
         try {
           const installmentsResp = await mpSdk.getInstallments({
@@ -1008,28 +1054,17 @@
 
           const metodo = Array.isArray(installmentsResp) ? installmentsResp[0] : installmentsResp;
           if (!metodo || !metodo.payer_costs || metodo.payer_costs.length === 0) {
-            selectParcelas.innerHTML = '<option value="1">1x (à vista)</option>';
-            atualizarTextoParcelaSelecionada();
+            renderizarOpcoesParcelamento(estadoPagamentoCartao.valorTotal);
             return;
           }
 
           estadoPagamentoCartao.paymentMethodId = metodo.payment_method_id || null;
           estadoPagamentoCartao.issuerId = metodo.issuer?.id || '';
 
-          selectParcelas.innerHTML = '';
-          metodo.payer_costs.forEach((op) => {
-            const opt = document.createElement('option');
-            opt.value = op.installments;
-            opt.textContent = op.recommended_message || `${op.installments}x de R$ ${Number(op.installment_amount).toFixed(2)}`;
-            selectParcelas.appendChild(opt);
-          });
-
-          atualizarTextoParcelaSelecionada();
-          selectParcelas.onchange = atualizarTextoParcelaSelecionada;
+          renderizarOpcoesParcelamento(estadoPagamentoCartao.valorTotal, metodo.payer_costs);
         } catch (err) {
           console.error('[Erro ao buscar parcelas MP]:', err);
-          selectParcelas.innerHTML = '<option value="1">1x (à vista)</option>';
-          atualizarTextoParcelaSelecionada();
+          renderizarOpcoesParcelamento(estadoPagamentoCartao.valorTotal);
         }
       }
 
@@ -1059,19 +1094,20 @@
       function atualizarTextoParcelaSelecionada() {
         const select = document.getElementById('mp-installments');
         const resumo = document.getElementById('mp-resumo-parcela');
+        const total = Number(estadoPagamentoCartao.valorTotal) || 0;
+        const limite = obterLimiteParcelas(total);
         const qtd = Number(select.value) || 1;
-        const parcelaEstimada = estadoPagamentoCartao.valorTotal > 0
-          ? (estadoPagamentoCartao.valorTotal / qtd).toFixed(2)
-          : '0.00';
+        const parcelaEstimada = total > 0 ? (total / qtd).toFixed(2) : '0.00';
 
-        resumo.textContent = `Valor total: R$ ${estadoPagamentoCartao.valorTotal.toFixed(2)} — Selecionado: ${qtd}x (aprox. R$ ${parcelaEstimada}/parcela)`;
+        resumo.textContent = `Valor total: R$ ${total.toFixed(2)} — Selecionado: ${qtd}x (aprox. R$ ${parcelaEstimada}/parcela) • Limite: até ${limite}x`;
       }
 
       window.abrirPagamentoCartao = function({ chamadoId, orcamentoId = null, valorTotal, emailPadrao = '' }) {
+        const totalNum = Number(valorTotal) || 0;
         estadoPagamentoCartao = {
           chamadoId,
           orcamentoId,
-          valorTotal: Number(valorTotal) || 0,
+          valorTotal: totalNum,
           paymentMethodId: null,
           issuerId: null
         };
@@ -1083,10 +1119,10 @@
           document.getElementById('mp-email').value = emailPadrao;
         }
 
-        document.getElementById('mp-installments').innerHTML = '<option value="1">1x (à vista)</option>';
+        document.getElementById('mp-installments').value = '1';
+        renderizarOpcoesParcelamento(totalNum);
         document.getElementById('mp-feedback-cartao').textContent = '';
         inicializarCamposCartaoMP();
-        atualizarTextoParcelaSelecionada();
         modal.scrollIntoView({ behavior: 'smooth', block: 'center' });
       };
 
@@ -1102,6 +1138,12 @@
         const docNumber = document.getElementById('mp-doc-number').value.replace(/\D/g, '');
         const payerEmail = document.getElementById('mp-email').value.trim();
         const installments = Number(document.getElementById('mp-installments').value) || 1;
+        const limitePermitido = obterLimiteParcelas(estadoPagamentoCartao.valorTotal);
+
+        if (installments < 1 || installments > limitePermitido) {
+          feedback.textContent = `Parcelamento permitido para este valor é de até ${limitePermitido}x.`;
+          return;
+        }
 
         if (!cardholderName || !payerEmail) {
           feedback.textContent = 'Preencha o nome do titular e o e-mail do pagador.';

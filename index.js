@@ -548,6 +548,13 @@ app.post('/api/pagamentos/cartao-parcelado', autenticarToken, async (req, res) =
       return res.status(400).json({ error: 'Valor total inválido para pagamento parcelado.' });
     }
 
+    const maxParcelasPermitidas = valorTotal > 500 ? 3 : 2;
+    if (qtdParcelas < 1 || qtdParcelas > maxParcelasPermitidas) {
+      return res.status(400).json({
+        error: `Quantidade de parcelas não permitida para o valor de R$ ${valorTotal.toFixed(2)}. Máximo permitido: ${maxParcelasPermitidas}x.`
+      });
+    }
+
     const userRes = await db.query(
       'SELECT nome, email, telefone, documento FROM usuarios WHERE id = $1',
       [req.usuario.id]
