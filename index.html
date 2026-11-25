@@ -156,34 +156,34 @@
               <p class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2">Serviços Especializados</p>
 
               <div class="grid grid-cols-2 gap-2 text-sm">
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
+                <button type="button" onclick="abrirSubpaginaServico('notebooks')" class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 hover:bg-slate-800/80 border border-slate-700/50 hover:border-amber-400/60 text-left cursor-pointer">
                   <i class="fa-solid fa-laptop text-amber-400 text-base w-5 text-center"></i>
                   <span class="text-white font-medium text-xs">Notebooks</span>
-                </div>
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
+                </button>
+                <button type="button" onclick="abrirSubpaginaServico('tablets')" class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 hover:bg-slate-800/80 border border-slate-700/50 hover:border-amber-400/60 text-left cursor-pointer">
                   <i class="fa-solid fa-tablet-screen-button text-amber-400 text-base w-5 text-center"></i>
                   <span class="text-white font-medium text-xs">Tablets</span>
-                </div>
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
+                </button>
+                <button type="button" onclick="abrirSubpaginaServico('computadores')" class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 hover:bg-slate-800/80 border border-slate-700/50 hover:border-amber-400/60 text-left cursor-pointer">
                   <i class="fa-solid fa-desktop text-amber-400 text-base w-5 text-center"></i>
                   <span class="text-white font-medium text-xs">Computadores</span>
-                </div>
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
+                </button>
+                <button type="button" onclick="abrirSubpaginaServico('smartphone')" class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 hover:bg-slate-800/80 border border-slate-700/50 hover:border-amber-400/60 text-left cursor-pointer">
                   <i class="fa-solid fa-mobile-screen-button text-amber-400 text-base w-5 text-center"></i>
                   <span class="text-white font-medium text-xs">Smartphone</span>
-                </div>
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
+                </button>
+                <button type="button" onclick="abrirSubpaginaServico('rede-de-pcs')" class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 hover:bg-slate-800/80 border border-slate-700/50 hover:border-amber-400/60 text-left cursor-pointer">
                   <i class="fa-solid fa-network-wired text-amber-400 text-base w-5 text-center"></i>
                   <span class="text-white font-medium text-xs">Rede de PCs</span>
-                </div>
-                <div class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 border border-slate-700/50">
+                </button>
+                <button type="button" onclick="abrirSubpaginaServico('redes-wi-fi')" class="flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/40 hover:bg-slate-800/80 border border-slate-700/50 hover:border-amber-400/60 text-left cursor-pointer">
                   <i class="fa-solid fa-wifi text-amber-400 text-base w-5 text-center"></i>
                   <span class="text-white font-medium text-xs">Redes Wi-Fi</span>
-                </div>
-                <div class="col-span-2 flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/50 border border-amber-500/30">
+                </button>
+                <button type="button" onclick="abrirSubpaginaServico('gestao-de-ti')" class="col-span-2 flex items-center gap-2.5 p-2 rounded-lg bg-slate-900/50 hover:bg-slate-800/80 border border-amber-500/30 hover:border-amber-400 text-left cursor-pointer">
                   <i class="fa-solid fa-building text-amber-400 text-base w-5 text-center"></i>
                   <span class="text-white font-semibold text-xs">Gestão de TI & Consultoria</span>
-                </div>
+                </button>
               </div>
             </div>
           </div>
@@ -281,6 +281,18 @@
           </div>
         </div>
 
+      </div>
+
+      <!-- SUB-PÁGINA DE DETALHES DO SERVIÇO -->
+      <div id="screen-servico" class="hidden p-6 md:p-8 bg-[#0f172a]/90 backdrop-blur-md min-h-[620px]">
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-4 mb-6 border-b border-slate-800">
+          <button type="button" onclick="fecharSubpaginaServico()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer">
+            <i class="fa-solid fa-arrow-left mr-1.5 text-amber-400"></i> Voltar ao Portal
+          </button>
+          <span class="text-xs text-slate-400">Seg a Sex 9h–17h | Sáb 09h–12h • R. São Vicente, Morro da Liberdade, 39A</span>
+        </div>
+
+        <div id="servico-detalhe-conteudo" class="max-w-4xl mx-auto"></div>
       </div>
 
       <!-- PAINEL PRINCIPAL (DASHBOARD EXECUTIVO) -->
@@ -482,11 +494,15 @@
       const chamadoMsg = document.getElementById('chamado-msg');
 
       function showLogin() {
+        const screenServico = document.getElementById('screen-servico');
+        if (screenServico) screenServico.classList.add('hidden');
         if (screenLogin) screenLogin.classList.remove('hidden');
         if (screenDashboard) screenDashboard.classList.add('hidden');
       }
 
       function showDashboard() {
+        const screenServico = document.getElementById('screen-servico');
+        if (screenServico) screenServico.classList.add('hidden');
         if (screenLogin) screenLogin.classList.add('hidden');
         if (screenDashboard) screenDashboard.classList.remove('hidden');
 
@@ -1251,6 +1267,136 @@
           feedback.textContent = `Erro: ${err.message || 'Falha na comunicação.'}`;
         } finally {
           btn.disabled = false;
+        }
+      };
+
+      // ==========================================
+      // SUB-PÁGINAS DE SERVIÇOS ESPECIALIZADOS
+      // ==========================================
+      const SERVICOS_DETALHES = {
+        'notebooks': {
+          icone: 'fa-laptop',
+          titulo: 'Assistência Técnica Especializada em Notebooks',
+          resumo: 'Manutenção corretiva, preventiva e upgrades para desempenho e confiabilidade.',
+          topicos: [
+            '<strong>Telas e Periféricos:</strong> Troca de telas quebradas ou com manchas, teclados, baterias e carregadores.',
+            '<strong>Estrutura e Energia:</strong> Reparo de carcaça, dobradiças e conectores de carga (DC jack).',
+            '<strong>Refrigeração e Desempenho:</strong> Limpeza interna, troca de pasta térmica, upgrade de SSD/RAM, formatação com backup e instalação de softwares.'
+          ],
+          msgWhatsApp: 'Olá, LL TECH INFO! Gostaria de um orçamento para Notebook.'
+        },
+        'tablets': {
+          icone: 'fa-tablet-screen-button',
+          titulo: 'Manutenção e Reparo de Tablets',
+          resumo: 'Soluções para uso doméstico, escolar e corporativo.',
+          topicos: [
+            '<strong>Display e Touch:</strong> Substituição de vidros trincados, touch screen e telas sem imagem.',
+            '<strong>Bateria e Carga:</strong> Troca de baterias e reparo de conectores de carregamento.',
+            '<strong>Sistema:</strong> Correção de travamentos, restauração e configuração inicial.'
+          ],
+          msgWhatsApp: 'Olá, LL TECH INFO! Gostaria de um orçamento para Tablet.'
+        },
+        'computadores': {
+          icone: 'fa-desktop',
+          titulo: 'Assistência e Montagem de Computadores (PCs)',
+          resumo: 'Diagnóstico, reparo, upgrades e montagem sob medida.',
+          topicos: [
+            '<strong>Diagnóstico e Reparo:</strong> Solução para PCs que não ligam, reiniciam, dão tela azul ou apresentam lentidão.',
+            '<strong>Montagem e Upgrade:</strong> Montagem personalizada e upgrades de processador, placa-mãe, memória, SSD e fonte.',
+            '<strong>Preventiva e Dados:</strong> Limpeza interna, organização de cabos, formatação e backup.'
+          ],
+          msgWhatsApp: 'Olá, LL TECH INFO! Gostaria de um orçamento para Computador.'
+        },
+        'smartphone': {
+          icone: 'fa-mobile-screen-button',
+          titulo: 'Assistência Técnica para Smartphones',
+          resumo: 'Reparos rápidos e suporte no dia a dia.',
+          topicos: [
+            '<strong>Componentes:</strong> Troca de telas, baterias, conectores de carga, câmeras, alto-falantes e microfones.',
+            '<strong>Falhas Técnicas:</strong> Diagnóstico de problemas de carga, aquecimento e travamentos.',
+            '<strong>Dados e Contas:</strong> Transferência de dados, configuração e orientação de backup.'
+          ],
+          msgWhatsApp: 'Olá, LL TECH INFO! Gostaria de um orçamento para Smartphone.'
+        },
+        'rede-de-pcs': {
+          icone: 'fa-network-wired',
+          titulo: 'Instalação e Configuração de Rede de Computadores',
+          resumo: 'Rede cabeada estável e organizada para residências, lojas e empresas.',
+          topicos: [
+            '<strong>Cabeamento e Infraestrutura:</strong> Pontos de rede, crimpagem, switches e organização.',
+            '<strong>Compartilhamento:</strong> Pastas em rede, arquivos locais e impressoras compartilhadas.',
+            '<strong>Estabilidade:</strong> Diagnóstico e correção de quedas e lentidão na rede local.'
+          ],
+          msgWhatsApp: 'Olá, LL TECH INFO! Gostaria de um orçamento para Rede de PCs.'
+        },
+        'redes-wi-fi': {
+          icone: 'fa-wifi',
+          titulo: 'Soluções em Redes Wi-Fi de Alta Performance',
+          resumo: 'Cobertura uniforme e sinal forte em todos os ambientes.',
+          topicos: [
+            '<strong>Cobertura Total:</strong> Eliminação de pontos sem sinal em casas, lojas e escritórios.',
+            '<strong>Equipamentos e Mesh:</strong> Configuração de roteadores, Access Points e redes Mesh.',
+            '<strong>Segurança:</strong> Rede separada para visitantes e estabilidade para trabalho e câmeras.'
+          ],
+          msgWhatsApp: 'Olá, LL TECH INFO! Gostaria de um orçamento para Redes Wi-Fi.'
+        },
+        'gestao-de-ti': {
+          icone: 'fa-building',
+          titulo: 'Gestão de TI, ERPs e Infraestrutura de Servidores',
+          resumo: 'Suporte corporativo para continuidade operacional, sistemas e servidores.',
+          topicos: [
+            '<strong>Consultoria e Suporte a ERPs:</strong> Atendimento em <strong>Microsiga</strong>, <strong>NBS</strong>, <strong>Alterdata</strong> e <strong>CISSPODER</strong>.',
+            '<strong>Bancos de Dados:</strong> Administração, manutenção preventiva, rotinas de backup/restauração e performance.',
+            '<strong>Servidores e Rede Corporativa:</strong> <strong>Servidores de Domínio (MS/Linux)</strong>, <strong>File Server (MS/Linux)</strong>, <strong>DNS</strong>, <strong>DHCP</strong>, <strong>Samba</strong> e demais serviços.',
+            '<strong>Planejamento de TI:</strong> Padronização de ambiente, políticas de backup e apoio técnico em infraestrutura.'
+          ],
+          msgWhatsApp: 'Olá, LL TECH INFO! Gostaria de falar sobre Gestão de TI, ERPs ou Servidores.'
+        }
+      };
+
+      window.abrirSubpaginaServico = function(chave) {
+        const item = SERVICOS_DETALHES[chave];
+        if (!item) return;
+
+        const container = document.getElementById('servico-detalhe-conteudo');
+        const waLink = `https://wa.me/5592986040401?text=${encodeURIComponent(item.msgWhatsApp)}`;
+
+        container.innerHTML = `
+          <div class="card border-amber-500/30 p-6">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-11 h-11 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl">
+                <i class="fa-solid ${item.icone}"></i>
+              </div>
+              <div>
+                <h2 class="text-xl md:text-2xl font-bold text-white">${item.titulo}</h2>
+                <p class="text-xs md:text-sm text-slate-300">${item.resumo}</p>
+              </div>
+            </div>
+
+            <ul class="space-y-3 my-5">
+              ${item.topicos.map(t => `<li class="p-3 rounded-lg bg-slate-900/70 border-l-4 border-amber-500 text-xs md:text-sm text-slate-200">${t}</li>`).join('')}
+            </ul>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-700/70">
+              <span class="text-xs text-slate-300"><i class="fa-brands fa-whatsapp text-emerald-400 mr-1"></i> WhatsApp: <strong>(92) 98604-0401</strong></span>
+              <a href="${waLink}" target="_blank" rel="noopener" class="px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs md:text-sm">
+                Solicitar Orçamento no WhatsApp
+              </a>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('screen-login').classList.add('hidden');
+        document.getElementById('screen-dashboard').classList.add('hidden');
+        document.getElementById('screen-servico').classList.remove('hidden');
+      };
+
+      window.fecharSubpaginaServico = function() {
+        document.getElementById('screen-servico').classList.add('hidden');
+        if (token && usuario) {
+          showDashboard();
+        } else {
+          showLogin();
         }
       };
     </script>
